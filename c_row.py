@@ -68,8 +68,7 @@ SCREEN_WIDTH = 48
 INNER_WIDTH  = 46
 
 def clear_screen():
-    sys.stdout.write("\033[2J\033[H")
-    sys.stdout.flush()
+    os.system("cls" if os.name == "nt" else "clear")
 
 def loading_spinner(pesan, duration=1.0):
     """Animasi spinner berputar saat proses loading tool"""
@@ -369,19 +368,19 @@ def render_main_screen(tick=0, user_input=""):
     sys.stdout.flush()
 
 def get_live_interactive_input():
-    """Animasi C-Row tenang (Zero Delay). Otomatis freeze total saat ngetik dan HANYA jalan lagi jika keluar keyboard / tekan Enter."""
+    """Animasi terus bergerak saat idle, otomatis berhenti saat user ngetik, dan jalan lagi saat berhenti ngetik"""
     global RESIZED
     user_input = ""
     tick = 0
     last_frame = time.time()
     last_keystroke_time = 0.0
     is_typing = False
-    IDLE_RESUME_DELAY = 8.0 # Waktu jeda panjang (8 detik) agar keyboard HP tidak terganggu sama sekali
-    FRAME_INTERVAL = 0.14   # Kecepatan frame seimbang (7 FPS): Bebas lag, super ringan, hemat baterai & CPU Termux
-    VALID_CHARS = "0123456789exitquitxX" # Filter ketat: Menolak semua kode sentuhan/mouse aneh
+    IDLE_RESUME_DELAY = 2.0 # Jeda 2 detik setelah berhenti menekan tombol sebelum animasi jalan lagi
+    FRAME_INTERVAL = 0.12   # Kecepatan frame seimbang (8 FPS): Halus, responsif & bebas lag
+    VALID_CHARS = "0123456789exitquitxX" # Filter ketat karakter valid
 
-    # Aktifkan Alternate Screen Buffer (\033[?1049h) dan tampilkan kursor (\033[?25h) agar Android Gboard langsung mengenali fokus input
-    sys.stdout.write("\033[?1049h\033[2J\033[H\033[?25h")
+    clear_screen()
+    sys.stdout.write("\033[?25h") # Kursor aktif di titik input
     sys.stdout.flush()
 
     old_settings = None
@@ -407,7 +406,7 @@ def get_live_interactive_input():
         while True:
             now = time.time()
 
-            # Deteksi resize layar secara efisien (hanya saat sinyal SIGWINCH aktif)
+            # Deteksi resize layar secara efisien
             if RESIZED:
                 RESIZED = False
                 curr_term_lines = shutil.get_terminal_size((48, 24)).lines
@@ -415,8 +414,7 @@ def get_live_interactive_input():
                     last_term_lines = curr_term_lines
                     is_typing = True
                     last_keystroke_time = now
-                    sys.stdout.write("\033[2J\033[H")
-                    sys.stdout.flush()
+                    clear_screen()
                     render_main_screen(tick, user_input)
 
             # 1. Cek tombol keyboard non-blocking
@@ -438,7 +436,7 @@ def get_live_interactive_input():
                     has_key = True
 
             if has_key:
-                # Tangani & buang escape sequences (sentuhan layar, mouse, fokus keyboard, dll.)
+                # Tangani & buang escape sequences (sentuhan layar, mouse, panah, dll.)
                 if ch == "\x1b":
                     time.sleep(0.01)
                     if sys.platform != "win32":
@@ -447,13 +445,11 @@ def get_live_interactive_input():
                     else:
                         while msvcrt.kbhit():
                             msvcrt.getwch()
-                    # Sentuhan / fokus terdeteksi: Freeze animasi seketika!
                     is_typing = True
                     last_keystroke_time = now
                     continue
 
                 if ch in ("\r", "\n"):
-                    # Abaikan Enter jika input masih kosong (jangan refresh layar)
                     if not user_input.strip():
                         continue
                     sys.stdout.write("\033[?25h\n")
@@ -475,13 +471,9 @@ def get_live_interactive_input():
                     last_keystroke_time = now
                     render_main_screen(tick, user_input)
 
-            # 2. Cek status idle:
-            # - Jika sudah ada teks yang diketik (len > 0), ANIMASI TETAP BERHENTI TOTAL (TIDAK AKAN JALAN SAMPAI ENTER DITEKAN)
-            # - Jika kosong, baru jalan lagi setelah 8 detik tidak menyentuh keyboard (keluar dari halaman keyboard)
+            # 2. Cek status idle: Berhenti saat ngetik, jalan lagi saat berhenti ngetik (jeda 2 detik)
             if is_typing:
-                if len(user_input) > 0:
-                    is_typing = True
-                elif now - last_keystroke_time >= IDLE_RESUME_DELAY:
+                if now - last_keystroke_time >= IDLE_RESUME_DELAY:
                     is_typing = False
 
             # 3. Update animasi jika sedang TIDAK mengetik
@@ -496,8 +488,7 @@ def get_live_interactive_input():
                 time.sleep(0.03)
 
     finally:
-        # Kembalikan kursor dan tutup Alternate Screen Buffer
-        sys.stdout.write("\033[?25h\033[?1049l")
+        sys.stdout.write("\033[?25h")
         sys.stdout.flush()
         if sys.platform != "win32" and old_settings:
             try:
