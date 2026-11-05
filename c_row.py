@@ -534,6 +534,7 @@ def run_apk_controller():
         size_mb = os.path.getsize(found_apk) / (1024 * 1024)
         print(f" {GREEN}✓ Nama File  :{WHITE} C-ROW.apk{RESET}")
         print(f" {GREEN}✓ Ukuran     :{WHITE} {size_mb:.2f} MB{RESET}")
+        print(f" {GREEN}✓ Lokasi     :{WHITE} {found_apk}{RESET}")
         print(f" {GREEN}✓ Status     :{GREEN} Siap Di-Install ke Perangkat HP{RESET}")
     else:
         print(f" {YELLOW}! Nama File  :{WHITE} C-ROW.apk{RESET}")
@@ -552,47 +553,83 @@ def run_apk_controller():
         if found_apk:
             print(f"\n{YELLOW} [*] Menyiapkan instalasi paket C-ROW.apk...{RESET}")
             if sys.platform != "win32":
-                # Android / Termux: Salin ke shared storage Download agar package installer bisa membaca file
-                dest_dl = "/sdcard/Download/C-ROW.apk"
-                copied = False
-                try:
-                    import shutil
-                    if os.path.exists("/sdcard/Download"):
-                        shutil.copy2(found_apk, dest_dl)
-                        copied = True
-                    elif os.path.exists(os.path.expanduser("~/storage/downloads")):
-                        dest_dl = os.path.expanduser("~/storage/downloads/C-ROW.apk")
-                        shutil.copy2(found_apk, dest_dl)
-                        copied = True
-                except Exception:
-                    pass
+                dest_paths = [
+                    "/sdcard/Download/C-ROW.apk",
+                    "/storage/emulated/0/Download/C-ROW.apk",
+                    os.path.expanduser("~/storage/downloads/C-ROW.apk"),
+                    os.path.expanduser("~/storage/shared/Download/C-ROW.apk")
+                ]
+                copied_path = None
+                for d in dest_paths:
+                    try:
+                        import shutil
+                        d_dir = os.path.dirname(d)
+                        if os.path.exists(d_dir):
+                            shutil.copy2(found_apk, d)
+                            copied_path = d
+                            break
+                    except Exception:
+                        pass
 
-                target_to_open = dest_dl if copied else found_apk
+                if not copied_path:
+                    print(f"{YELLOW} [*] Menyiapkan izin penyimpanan (termux-setup-storage)...{RESET}")
+                    os.system("termux-setup-storage")
+                    time.sleep(1.0)
+                    for d in dest_paths:
+                        try:
+                            import shutil
+                            d_dir = os.path.dirname(d)
+                            if os.path.exists(d_dir):
+                                shutil.copy2(found_apk, d)
+                                copied_path = d
+                                break
+                        except Exception:
+                            pass
+
+                target_to_open = copied_path if copied_path else found_apk
                 print(f"{GREEN} [✓] Memanggil Android Package Installer...{RESET}")
 
-                # Jalankan perintah pembuka APK di Termux
                 installed = False
-                if os.system(f"termux-open '{target_to_open}'") == 0:
-                    installed = True
-                elif os.system(f"am start -a android.intent.action.VIEW -d 'file://{target_to_open}' -t 'application/vnd.android.package-archive' 2>/dev/null") == 0:
-                    installed = True
+                if os.system("which su >/dev/null 2>&1") == 0:
+                    print(f"{CYAN} [*] Terdeteksi akses root, mencoba instalasi langsung...{RESET}")
+                    if os.system(f"su -c 'pm install -r \"{target_to_open}\"'") == 0:
+                        installed = True
+                        print(f"\n{GREEN} [✓] APK BERHASIL DIINSTALL LANGSUNG KE SISTEM ANDROID!{RESET}")
 
-                if installed or copied:
-                    print(f"\n{GREEN} [✓] Dialog instalasi Android telah dibuka di layar HP!{RESET}")
-                    print(f"{WHITE} Silakan klik tombol 'Install' / 'Pasang' di layar HP Anda.{RESET}")
-                    if copied:
-                        print(f"{DIM_GREEN} (File juga sudah tersimpan di Pengelola File > Download > C-ROW.apk){RESET}")
-                else:
-                    print(f"\n{YELLOW} [!] Jika dialog tidak otomatis muncul, buka Pengelola File HP:{RESET}")
-                    print(f"{WHITE} Masuk ke folder 'Download' lalu ketuk file 'C-ROW.apk' untuk menginstall.{RESET}")
+                if not installed:
+                    if os.system(f"termux-open '{target_to_open}'") == 0:
+                        installed = True
+                        print(f"\n{GREEN} [✓] Jendela instalasi Android telah muncul di layar HP Anda!{RESET}")
+                        print(f"{WHITE} Silakan ketuk tombol 'Install' / 'Pasang' pada dialog.{RESET}")
+
+                if not installed:
+                    if os.system(f"am start -a android.intent.action.VIEW -d 'file://{target_to_open}' -t 'application/vnd.android.package-archive' 2>/dev/null") == 0:
+                        installed = True
+                        print(f"\n{GREEN} [✓] Perintah instalasi dikirim ke Package Installer.{RESET}")
+
+                if not installed:
+                    print(f"\n{YELLOW} [i] Buka file manual di HP:{RESET}")
+                    print(f"{WHITE} Buka Pengelola File / File Manager > Masuk folder Download > Ketuk 'C-ROW.apk'{RESET}")
             else:
-                # Di Windows
-                print(f"\n{YELLOW} [i] Anda sedang menjalankan di Windows Laptop.{RESET}")
-                print(f"{GREEN} [✓] Membuka folder lokasi APK di Explorer...{RESET}")
-                try:
-                    os.system(f'explorer.exe /select,"{found_apk}"')
-                except Exception:
-                    pass
+                print(f"\n{YELLOW} [*] Memeriksa koneksi perangkat Android (ADB)...{RESET}")
+                has_adb = (os.system("where adb >nul 2>&1") == 0)
+                adb_installed = False
+                if has_adb:
+                    adb_out = os.popen("adb devices").read()
+                    if "device\n" in adb_out or "\tdevice" in adb_out:
+                        print(f"{GREEN} [✓] Terdeteksi HP Android terhubung via USB ADB!{RESET}")
+                        print(f"{CYAN} [*] Mengirim & menginstall C-ROW.apk ke HP...{RESET}")
+                        if os.system(f'adb install -r "{found_apk}"') == 0:
+                            adb_installed = True
+                            print(f"\n{GREEN} [✓] SUKSES: APK berhasil terinstall langsung di HP Anda!{RESET}")
+
+                if not adb_installed:
+                    print(f"\n{YELLOW} [i] Menampilkan lokasi file di Windows Explorer...{RESET}")
+                    try:
+                        os.system(f'explorer.exe /select,"{found_apk}"')
+                    except Exception:
+                        pass
+                    print(f"{WHITE} File APK sudah siap di desktop: {found_apk}{RESET}")
         else:
             print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
         input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
@@ -600,25 +637,46 @@ def run_apk_controller():
     elif sub_pilihan == "2":
         if found_apk:
             print(f"\n{YELLOW} [*] Menyalin file APK ke folder Download...{RESET}")
-            dest_paths = ["/sdcard/Download/C-ROW.apk", os.path.expanduser("~/storage/downloads/C-ROW.apk")]
-            success = False
-            for d in dest_paths:
+            if sys.platform != "win32":
+                dest_paths = [
+                    "/sdcard/Download/C-ROW.apk",
+                    "/storage/emulated/0/Download/C-ROW.apk",
+                    os.path.expanduser("~/storage/downloads/C-ROW.apk")
+                ]
+                success = False
+                for d in dest_paths:
+                    try:
+                        import shutil
+                        d_dir = os.path.dirname(d)
+                        if os.path.exists(d_dir):
+                            shutil.copy2(found_apk, d)
+                            print(f"{GREEN} [✓] Berhasil disalin ke: {d}{RESET}")
+                            success = True
+                            break
+                    except Exception:
+                        pass
+                if not success:
+                    print(f"{YELLOW} [*] Menyiapkan izin penyimpanan (termux-setup-storage)...{RESET}")
+                    os.system("termux-setup-storage")
+                    time.sleep(1.0)
+                    for d in dest_paths:
+                        try:
+                            import shutil
+                            d_dir = os.path.dirname(d)
+                            if os.path.exists(d_dir):
+                                shutil.copy2(found_apk, d)
+                                print(f"{GREEN} [✓] Berhasil disalin ke: {d}{RESET}")
+                                success = True
+                                break
+                        except Exception:
+                            pass
+            else:
+                win_dl = os.path.join(os.path.expanduser("~"), "Downloads", "C-ROW.apk")
                 try:
                     import shutil
-                    dir_part = os.path.dirname(d)
-                    if os.path.exists(dir_part):
-                        shutil.copy2(found_apk, d)
-                        print(f"{GREEN} [✓] Berhasil disalin ke: {d}{RESET}")
-                        success = True
-                        break
-                except Exception:
-                    pass
-            if not success:
-                try:
-                    import shutil
-                    shutil.copy2(found_apk, "C-ROW.apk")
-                    print(f"{GREEN} [✓] APK disalin ke folder kerja aktif saat ini: {os.path.abspath('C-ROW.apk')}{RESET}")
-                    print(f"{YELLOW} [i] Jika ingin akses /sdcard/Download, ketik perintah 'termux-setup-storage' di Termux.{RESET}")
+                    shutil.copy2(found_apk, win_dl)
+                    print(f"{GREEN} [✓] Berhasil disalin ke folder Downloads Windows:{RESET}")
+                    print(f"{WHITE} {win_dl}{RESET}")
                 except Exception as e:
                     print(f"{RED} [!] Gagal menyalin: {e}{RESET}")
         else:
@@ -627,9 +685,29 @@ def run_apk_controller():
 
     elif sub_pilihan == "3":
         if found_apk:
-            print(f"\n{YELLOW} [*] Menjalankan server HTTP lokal di port 8080...{RESET}")
-            print(f"{GREEN} [✓] Buka di browser perangkat lain: http://<IP_ANDA>:8080/{os.path.basename(found_apk)}{RESET}")
-            print(f"{WHITE} (Tekan Ctrl+C untuk menghentikan server dan kembali){RESET}\n")
+            import socket
+            def get_local_ip():
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    ip = s.getsockname()[0]
+                    s.close()
+                    return ip
+                except Exception:
+                    return "127.0.0.1"
+
+            local_ip = get_local_ip()
+            port = 8080
+            apk_filename = os.path.basename(found_apk)
+
+            print(f"\n{YELLOW} [*] Menjalankan server HTTP lokal di port {port}...{RESET}")
+            print(f"{WHITE} ------------------------------------------------{RESET}")
+            print(f" {GREEN}✓ LINK DOWNLOAD LANGSUNG:{RESET}")
+            print(f" {CYAN}👉 http://{local_ip}:{port}/{apk_filename}{RESET}")
+            print(f"{WHITE} ------------------------------------------------{RESET}")
+            print(f"{WHITE} Buka link di atas pada browser HP yang terhubung ke WiFi sama.{RESET}")
+            print(f"{YELLOW} (Tekan Ctrl+C untuk menghentikan server dan kembali ke menu){RESET}\n")
+
             try:
                 import http.server
                 import socketserver
@@ -637,10 +715,13 @@ def run_apk_controller():
                 class Handler(http.server.SimpleHTTPRequestHandler):
                     def __init__(self, *args, **kwargs):
                         super().__init__(*args, directory=apk_dir, **kwargs)
-                with socketserver.TCPServer(("", 8080), Handler) as httpd:
+                socketserver.TCPServer.allow_reuse_address = True
+                with socketserver.TCPServer(("", port), Handler) as httpd:
                     httpd.serve_forever()
             except KeyboardInterrupt:
                 print(f"\n{RED} [*] Server HTTP dihentikan.{RESET}")
+            except Exception as e:
+                print(f"\n{RED} [!] Error server HTTP: {e}{RESET}")
         else:
             print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
         time.sleep(1.5)
