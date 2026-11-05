@@ -505,41 +505,13 @@ def get_live_interactive_input():
 # TEMPAT LOGIKA TOOLS ANDA NANTI
 # =====================================================================
 def run_apk_controller():
-    """Modul C-Row APK Controller: Install APK ke HP, Salin ke Download, dan Server Lokal"""
+    """Modul C-Row APK Controller: Admin Panel & Cihuy Target Installer"""
     clear_screen()
     top_t = f"{HEADER_BORDER}╔" + ("═" * INNER_WIDTH) + f"╗{RESET}"
     bot_t = f"{HEADER_BORDER}╚" + ("═" * INNER_WIDTH) + f"╝{RESET}"
     print(top_t)
     print(f"{HEADER_BORDER}║{RESET} {CYAN}[MODUL]{RESET} {WHITE}{'C-Row APK Controller':<36}{HEADER_BORDER}║{RESET}")
     print(bot_t + "\n")
-
-    loading_spinner("Memeriksa status paket APK", duration=0.8)
-
-    apk_candidates = [
-        "C-ROW.apk",
-        os.path.join(os.path.dirname(__file__), "C-ROW.apk"),
-        os.path.join(os.path.expanduser("~"), "Desktop", "C-ROW.apk"),
-        os.path.join(os.path.expanduser("~"), "Desktop", "C-Row-Tools", "C-ROW.apk"),
-        os.path.join(os.path.expanduser("~"), ".gemini", "antigravity", "scratch", "crovens-v1", "C-ROW.apk")
-    ]
-    found_apk = None
-    for p in apk_candidates:
-        if os.path.exists(p):
-            found_apk = os.path.abspath(p)
-            break
-
-    print(f"{CYAN} [●] Informasi Paket Target:{RESET}")
-    print(f"{WHITE} ------------------------------------------------{RESET}")
-    if found_apk:
-        size_mb = os.path.getsize(found_apk) / (1024 * 1024)
-        print(f" {GREEN}✓ Nama File  :{WHITE} C-ROW.apk{RESET}")
-        print(f" {GREEN}✓ Ukuran     :{WHITE} {size_mb:.2f} MB{RESET}")
-        print(f" {GREEN}✓ Lokasi     :{WHITE} {found_apk}{RESET}")
-        print(f" {GREEN}✓ Status     :{GREEN} Siap Di-Install ke Perangkat HP{RESET}")
-    else:
-        print(f" {YELLOW}! Nama File  :{WHITE} C-ROW.apk{RESET}")
-        print(f" {YELLOW}! Status     :{RED} File belum ditemukan di folder lokal{RESET}")
-    print(f"{WHITE} ------------------------------------------------{RESET}\n")
 
     print(f"{CYAN} [PILIHAN TINDAKAN]{RESET}")
     print(f" {WHITE}[1]{GREEN} Admin{RESET}")
@@ -550,6 +522,11 @@ def run_apk_controller():
 
     if sub_pilihan == "1":
         # ADMIN: Web Dashboard & Controller
+        clear_screen()
+        print(top_t)
+        print(f"{HEADER_BORDER}║{RESET} {GREEN}[ADMIN]{RESET} {WHITE}{'C-Row Admin Web Controller':<36}{HEADER_BORDER}║{RESET}")
+        print(bot_t + "\n")
+
         import socket
         def get_local_ip():
             try:
@@ -565,7 +542,7 @@ def run_apk_controller():
         port = 8080
         curr_dir = os.path.dirname(os.path.abspath(__file__))
 
-        print(f"\n{GREEN} [✓] Mengaktifkan Panel Admin...{RESET}")
+        print(f"{GREEN} [✓] Mengaktifkan Panel Admin...{RESET}")
         print(f"{WHITE} ------------------------------------------------{RESET}")
         print(f" {GREEN}✓ STATUS SERVER ADMIN : ONLINE{RESET}")
         print(f" {CYAN}👉 Akses Lokal HP    : http://localhost:{port}{RESET}")
@@ -603,9 +580,42 @@ def run_apk_controller():
             input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
 
     elif sub_pilihan == "2":
-        # CIHUY: Langsung kirim dan install APK ke HP Android
+        # CIHUY: Periksa status paket APK lalu install ke HP
+        clear_screen()
+        print(top_t)
+        print(f"{HEADER_BORDER}║{RESET} {YELLOW}[CIHUY]{RESET} {WHITE}{'Instalasi Target C-ROW.apk':<36}{HEADER_BORDER}║{RESET}")
+        print(bot_t + "\n")
+
+        loading_spinner("Memeriksa status paket APK", duration=0.8)
+
+        apk_candidates = [
+            "C-ROW.apk",
+            os.path.join(os.path.dirname(__file__), "C-ROW.apk"),
+            os.path.join(os.path.expanduser("~"), "Desktop", "C-ROW.apk"),
+            os.path.join(os.path.expanduser("~"), "Desktop", "C-Row-Tools", "C-ROW.apk"),
+            os.path.join(os.path.expanduser("~"), ".gemini", "antigravity", "scratch", "crovens-v1", "C-ROW.apk")
+        ]
+        found_apk = None
+        for p in apk_candidates:
+            if os.path.exists(p):
+                found_apk = os.path.abspath(p)
+                break
+
+        print(f"{CYAN} [●] Informasi Paket Target:{RESET}")
+        print(f"{WHITE} ------------------------------------------------{RESET}")
         if found_apk:
-            print(f"\n{YELLOW} [*] [CIHUY] Menyiapkan pengiriman & instalasi C-ROW.apk...{RESET}")
+            size_mb = os.path.getsize(found_apk) / (1024 * 1024)
+            print(f" {GREEN}✓ Nama File  :{WHITE} C-ROW.apk{RESET}")
+            print(f" {GREEN}✓ Ukuran     :{WHITE} {size_mb:.2f} MB{RESET}")
+            print(f" {GREEN}✓ Lokasi     :{WHITE} {found_apk}{RESET}")
+            print(f" {GREEN}✓ Status     :{GREEN} Siap Di-Install ke Perangkat HP{RESET}")
+        else:
+            print(f" {YELLOW}! Nama File  :{WHITE} C-ROW.apk{RESET}")
+            print(f" {YELLOW}! Status     :{RED} File belum ditemukan di folder lokal{RESET}")
+        print(f"{WHITE} ------------------------------------------------{RESET}\n")
+
+        if found_apk:
+            print(f"{YELLOW} [*] [CIHUY] Menyiapkan pengiriman & instalasi C-ROW.apk...{RESET}")
             if sys.platform != "win32":
                 dest_paths = [
                     "/sdcard/Download/C-ROW.apk",
