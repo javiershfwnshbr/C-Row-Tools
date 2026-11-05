@@ -69,10 +69,10 @@ def vlen(s):
     s_clean = re.sub(r'\x1b\[[0-9;]*[a-zA-Z]', '', s)
     return sum(2 if unicodedata.east_asian_width(c) in ('W', 'F') else 1 for c in s_clean)
 
-def pad58(text):
-    """Memastikan teks berada tepat di tengah dengan lebar 58 kolom visual"""
+def pad38(text):
+    """Memastikan teks berada tepat di tengah dengan lebar 38 kolom visual"""
     cur = vlen(text)
-    rem = 58 - cur
+    rem = 38 - cur
     l = max(0, rem // 2)
     r = max(0, rem - l)
     return (' ' * l) + text + (' ' * r)
@@ -82,7 +82,7 @@ def get_bin(offset, length):
 
 def pad_with_bin(text_to_show, offset):
     cur = vlen(text_to_show)
-    rem = 58 - cur
+    rem = 38 - cur
     l = max(0, rem // 2)
     r = max(0, rem - l)
     b_left = f"{DIM_GREEN}" + get_bin(offset, l) + f"{RESET}"
@@ -90,26 +90,26 @@ def pad_with_bin(text_to_show, offset):
     return b_left + text_to_show + b_right
 
 def skull_welcome_intro():
-    """Animasi opening Welcome My Friend dengan ASCII Tengkorak & latar biner hijau Matrix"""
+    """Animasi opening Welcome My Friend dengan ASCII Tengkorak & latar biner hijau Matrix (Fit Layar HP)"""
     clear_screen()
     sys.stdout.write("\033[?25l")  # Sembunyikan kursor terminal
     sys.stdout.flush()
 
-    top_b = f"{HEADER_BORDER} ╔══════════════════════════════════════════════════════════╗{RESET}"
-    bot_b = f"{HEADER_BORDER} ╚══════════════════════════════════════════════════════════╝{RESET}"
-    mid_b = f"{HEADER_BORDER} ╠══════════════════════════════════════════════════════════╣{RESET}"
+    top_b = f"{HEADER_BORDER} ╔" + ("═" * 38) + f"╗{RESET}"
+    bot_b = f"{HEADER_BORDER} ╚" + ("═" * 38) + f"╝{RESET}"
+    mid_b = f"{HEADER_BORDER} ╠" + ("═" * 38) + f"╣{RESET}"
 
     welcome_target = "W E L C O M E   M Y   F R I E N D"
     subtitle_target = "C-Row is here"
 
     skull_template = [
-        ("                      .-------.                           ", 22, 31),
-        ("                    .-         -.                         ", 20, 33),
-        ("                   /   (O) (O)   \\                        ", 19, 34),
-        ("                  |       _       |                       ", 18, 35),
-        ("                   \\   \\_____/   /                        ", 19, 34),
-        ("                    \\   | | |   /                         ", 20, 33),
-        ("                     '--'---'--'                          ", 21, 32),
+        ("              .-------.               ", 14, 22),
+        ("            .-         -.             ", 12, 24),
+        ("           /   (O) (O)   \\            ", 11, 25),
+        ("          |       _       |           ", 10, 26),
+        ("           \\   \\_____/   /            ", 11, 25),
+        ("            \\   | | |   /             ", 12, 24),
+        ("             '--'---'--'              ", 13, 23),
     ]
 
     def get_skull_bg_line(r_idx, tick, eye_color):
@@ -117,7 +117,7 @@ def skull_welcome_intro():
         res = []
         for c_idx, ch in enumerate(raw):
             if c_idx < l_bound or c_idx > r_bound:
-                b = BINARY_STREAM[(r_idx * 58 + c_idx + tick) % len(BINARY_STREAM)]
+                b = BINARY_STREAM[(r_idx * 38 + c_idx + tick) % len(BINARY_STREAM)]
                 res.append(f"{DIM_GREEN}{b}{RESET}")
             else:
                 if ch == 'O':
@@ -140,12 +140,12 @@ def skull_welcome_intro():
 
             content = [
                 top_b,
-                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i, 58) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i, 38) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 *[f"{HEADER_BORDER} ║{l}{HEADER_BORDER}║{RESET}" for l in s_lines],
-                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i + 50, 58) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i + 50, 38) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 mid_b,
                 f"{HEADER_BORDER} ║" + pad_with_bin(txt1, i) + f"{HEADER_BORDER}║{RESET}",
-                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i + 80, 58) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i + 80, 38) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 bot_b
             ]
 
@@ -164,9 +164,9 @@ def skull_welcome_intro():
 
             content = [
                 top_b,
-                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(j + 40, 58) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(j + 40, 38) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 *[f"{HEADER_BORDER} ║{l}{HEADER_BORDER}║{RESET}" for l in s_lines],
-                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(j + 90, 58) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(j + 90, 38) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 mid_b,
                 f"{HEADER_BORDER} ║" + pad_with_bin(f"{CYAN}{BOLD}{welcome_target}{RESET}", j + 40) + f"{HEADER_BORDER}║{RESET}",
                 f"{HEADER_BORDER} ║" + pad_with_bin(txt2, j + 120) + f"{HEADER_BORDER}║{RESET}",
@@ -217,14 +217,14 @@ def get_shimmer_text(text, beam_pos, base_color, shine_color):
     return f"{base_color}" + "".join(res) + RESET
 
 def render_main_screen(tick, user_input=""):
-    """Merender layar dengan C-ROW bernyawa di atas & Menu Tenang, Nyaman & Mudah Dibaca"""
+    """Merender layar dengan C-ROW bernyawa di atas & Menu Tenang, Nyaman & Mudah Dibaca (Fit Layar HP)"""
     
     # =========================================================================
-    # 1. PERHITUNGAN SIRKUIT HEADER (Ungu): Lebar=58, Tinggi=8 -> Total=132 step
+    # 1. PERHITUNGAN SIRKUIT HEADER (Ungu): Lebar=38, Tinggi=8 -> Total=92 step
     # =========================================================================
-    W_H = 58
+    W_H = 38
     H_H = 8
-    perim_h = 2 * (W_H + H_H)  # 132
+    perim_h = 2 * (W_H + H_H)  # 92
     
     step1_h = tick % perim_h
     step2_h = (tick + (perim_h // 2)) % perim_h
@@ -244,27 +244,27 @@ def render_main_screen(tick, user_input=""):
         else:
             left_walls_h.add((H_H - 1) - (s - 2 * W_H - H_H))
 
-    top_header = get_multi_beam_h_line(" ╔", "═", "╗", 58, top_beams_h, HEADER_BORDER, YELLOW)
-    mid_header = f"{HEADER_BORDER} ╠══════════════════════════════════════════════════════════╣{RESET}"
-    bot_header = get_multi_beam_h_line(" ╚", "═", "╝", 58, bot_beams_h, HEADER_BORDER, YELLOW)
+    top_header = get_multi_beam_h_line(" ╔", "═", "╗", 38, top_beams_h, HEADER_BORDER, YELLOW)
+    mid_header = f"{HEADER_BORDER} ╠" + ("═" * 38) + f"╣{RESET}"
+    bot_header = get_multi_beam_h_line(" ╚", "═", "╝", 38, bot_beams_h, HEADER_BORDER, YELLOW)
 
     raw_art = [
-        "       ██████╗        ██████╗  ██████╗ ██╗    ██╗         ",
-        "      ██╔════╝        ██╔══██╗██╔═══██╗██║    ██║         ",
-        "      ██║       █████╗██████╔╝██║   ██║██║ █╗ ██║         ",
-        "      ██║       ╚════╝██╔══██╗██║   ██║██║███╗██║         ",
-        "      ╚██████╗        ██║  ██║╚██████╔╝╚███╔███╔╝         ",
-        "       ╚═════╝        ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝          ",
+        " ██████╗   ██████╗  ██████╗ ██╗    ██╗",
+        "██╔════╝   ██╔══██╗██╔═══██╗██║    ██║",
+        "██║ █████╗ ██████╔╝██║   ██║██║ █╗ ██║",
+        "██║ ╚════╝ ██╔══██╗██║   ██║██║███╗██║",
+        "╚██████╗   ██║  ██║╚██████╔╝╚███╔███╔╝",
+        " ╚═════╝   ╚═╝  ╚═╝ ╚═════╝  ╚══╝╚══╝ ",
     ]
 
     # ANIMASI DI HURUF C-ROW + BACKGROUND BINER SAMAR
-    beam_crow_x = (tick * 2) % 66
+    beam_crow_x = (tick * 2) % 46
     art_contents = []
     for r_idx, line in enumerate(raw_art):
         line_chars = []
         for col_idx, char in enumerate(line):
             if char == ' ':
-                b_digit = BINARY_STREAM[(r_idx * 58 + col_idx + (tick // 2)) % len(BINARY_STREAM)]
+                b_digit = BINARY_STREAM[(r_idx * 38 + col_idx + (tick // 2)) % len(BINARY_STREAM)]
                 line_chars.append(f"{DIM_BINARY}{b_digit}{RESET}")
             else:
                 dist = abs(col_idx - beam_crow_x)
@@ -284,51 +284,51 @@ def render_main_screen(tick, user_input=""):
 
     header_body.append(mid_header)
     
-    # Baris VIP + Mahkota Emas Asli 👑
+    # Baris VIP + Mahkota Emas Asli 👑 (Lebar visual total = 38)
     info_idx = 7
     l_wall_info = f"{WHITE}║{RESET}" if info_idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
     r_wall_info = f"{WHITE}║{RESET}" if info_idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
     
-    left_bin = "".join(BINARY_STREAM[(7 * 58 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(26))
-    right_bin = "".join(BINARY_STREAM[(7 * 58 + 26 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(27))
+    left_bin = "".join(BINARY_STREAM[(7 * 38 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(16))
+    right_bin = "".join(BINARY_STREAM[(7 * 38 + 16 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(17))
     
     vip_line = f" {l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
     header_body.append(vip_line)
 
     # =========================================================================
-    # 2. TABEL TOOLS: SOLID, TENANG, KONTRAS TINGGI & NYAMAN DIBACA (NO FLICKER)
+    # 2. TABEL TOOLS: SOLID, TENANG, KONTRAS TINGGI & FIT LAYAR HP (41 KOLOM)
     # =========================================================================
-    top_menu      = f"{MENU_BORDER} ┌────────┬─────────────────────────────────────────────────┐{RESET}"
-    connected_div = f"{MENU_BORDER} ├────────┼─────────────────────────────────────────────────┤{RESET}"
-    bot_menu      = f"{MENU_BORDER} └────────┴─────────────────────────────────────────────────┘{RESET}"
+    top_menu      = f"{MENU_BORDER} ┌──────┬───────────────────────────────┐{RESET}"
+    connected_div = f"{MENU_BORDER} ├──────┼───────────────────────────────┤{RESET}"
+    bot_menu      = f"{MENU_BORDER} └──────┴───────────────────────────────┘{RESET}"
 
     menu_rows_data = [
-        (CYAN,    "[01]", "  Tool Scraper & Sosmed                          "),
-        (GREEN,   "[02]", "  Tool Analisis & Keamanan                       "),
-        (YELLOW,  "[03]", "  Tool Otomatisasi & Bot                         "),
-        (MAGENTA, "[04]", "  File Manager & Downloader                      "),
-        (BLUE,    "[05]", "  Pengaturan & Update Tool                       "),
-        (RED,     "[00]", "  Keluar Sistem                                  ")
+        (CYAN,    "[01]", "Tool Scraper & Sosmed         "),
+        (GREEN,   "[02]", "Tool Analisis & Keamanan      "),
+        (YELLOW,  "[03]", "Tool Otomatisasi & Bot        "),
+        (MAGENTA, "[04]", "File Manager & Downloader     "),
+        (BLUE,    "[05]", "Pengaturan & Update Tool      "),
+        (RED,     "[00]", "Keluar Sistem                 ")
     ]
 
     menu_body = []
     for idx, (tag_color, tag_id, name) in enumerate(menu_rows_data):
-        menu_body.append(f" {MENU_BORDER}│{RESET} {tag_color}❯ {tag_id}{RESET} {MENU_BORDER}│{WHITE}{name}{MENU_BORDER}│{RESET}")
+        menu_body.append(f" {MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│{WHITE} {name}{MENU_BORDER}│{RESET}")
         if idx < len(menu_rows_data) - 1:
             menu_body.append(connected_div)
 
     # =========================================================================
     # 3. JUDUL MENU & PROMPT INPUT
     # =========================================================================
-    beam_title = (tick * 2) % 35
-    title_animated = get_shimmer_text("  [ PILIH MENU TOOLS ]", beam_title, MENU_BORDER, WHITE)
+    beam_title = (tick * 2) % 30
+    title_animated = get_shimmer_text("       [ PILIH MENU TOOLS ]", beam_title, MENU_BORDER, WHITE)
 
     pulse_palette = [MENU_BORDER, CYAN, WHITE, YELLOW]
     arrow_color = pulse_palette[(tick // 3) % len(pulse_palette)]
     blink_cursor = f"{YELLOW}█{RESET}" if ((tick // 3) % 2 == 0) else " "
 
-    prompt_line1 = f"{MENU_BORDER}  ╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}"
-    prompt_line2 = f"{MENU_BORDER}  ╰─{arrow_color}➤{WHITE} Masukkan Pilihan [0-5]: {YELLOW}{user_input}{blink_cursor}\033[K"
+    prompt_line1 = f"{MENU_BORDER} ╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}"
+    prompt_line2 = f"{MENU_BORDER} ╰─{arrow_color}➤{WHITE} Masukkan Pilihan [0-5]: {YELLOW}{user_input}{blink_cursor}\033[K"
 
     # =========================================================================
     # GABUNGKAN SELURUH TAMPILAN
