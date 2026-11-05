@@ -16,17 +16,11 @@ import random
 import re
 import unicodedata
 
-# Impor library input keyboard sesuai OS
 if sys.platform == "win32":
-    import msvcrt
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
         pass
-else:
-    import select
-    import termios
-    import tty
 
 # --- WARNA (PALET KONTRAS TINGGI & NYAMAN DI MATA) ---
 HEADER_BORDER = "\033[38;5;201m\033[1m" # Ungu Neon Menyala / Electric Magenta (Kotak C-ROW)
@@ -99,16 +93,13 @@ def skull_welcome_intro():
     subtitle_target = "C-Row is here"
 
     skull_template = [
-        ("                  .---------.                   ", 18, 28),
-        ("                .'  _     _  '.                 ", 16, 30),
-        (r"               /   / \   / \   \                ", 15, 31),
-        ("              :   | O | | O |   :               ", 14, 32),
-        (r"              :    \_/   \_/    :               ", 14, 32),
-        (r"               \       /\      /                ", 15, 31),
-        (r"               /`---. /  \ .---'\               ", 15, 32),
-        ("              (      '----'      )              ", 14, 33),
-        (r"               \  | | | | | | | /               ", 15, 32),
-        ("                `--------------'                ", 16, 31),
+        ("                   .-------.                    ", 19, 27),
+        ("                 .-         -.                  ", 17, 29),
+        (r"                /   (O) (O)   \                 ", 16, 30),
+        ("               |       _       |                ", 15, 31),
+        (r"                \   \_____/   /                 ", 16, 30),
+        (r"                 \   | | |   /                  ", 17, 29),
+        ("                  '--'---'--'                   ", 18, 28),
     ]
 
     def get_skull_bg_line(r_idx, tick, eye_color):
@@ -217,7 +208,7 @@ def get_shimmer_text(text, beam_pos, base_color, shine_color):
                 res.append(f"{base_color}{ch}")
     return f"{base_color}" + "".join(res) + RESET
 
-def render_main_screen(tick=0, user_input=""):
+def render_main_screen(tick=0):
     """Merender menu C-ROW: Header Besar (Lebar 50 Kol, Panjang 7 Baris), Tools di Pinggir, Bebas Kedipan"""
     
     # 1. Perhitungan Sirkuit Header Ungu (Lebar=48, Tinggi=9 -> Keliling=114)
@@ -317,16 +308,9 @@ def render_main_screen(tick=0, user_input=""):
         if idx < len(menu_rows_data) - 1:
             menu_body.append(connected_div)
 
-    # 3. Judul Menu & Prompt
+    # 3. Judul Menu
     beam_title = (tick * 2) % 30
     title_animated = get_shimmer_text(" [ PILIH MENU TOOLS ]", beam_title, MENU_BORDER, WHITE)
-
-    pulse_palette = [MENU_BORDER, CYAN, WHITE, YELLOW]
-    arrow_color = pulse_palette[(tick // 3) % len(pulse_palette)]
-    blink_cursor = f"{YELLOW}█{RESET}" if ((tick // 3) % 2 == 0) else " "
-
-    prompt_line1 = f"{MENU_BORDER}╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}"
-    prompt_line2 = f"{MENU_BORDER}╰─{arrow_color}➤{WHITE} Masukkan Pilihan [0-5]: {YELLOW}{user_input}{blink_cursor}\033[K"
 
     all_lines = [
         top_header,
@@ -336,114 +320,31 @@ def render_main_screen(tick=0, user_input=""):
         title_animated,
         top_menu,
         *menu_body,
-        bot_menu,
-        "",
-        prompt_line1,
-        prompt_line2
+        bot_menu
     ]
 
-    # Double buffer in-place tanpa menghapus layar (Zero Flicker / Bebas Kedip)
+    # Double buffer tanpa erase screen untuk menghilangkan kedipan (ilang-ilangan)
     output = "\033[H" + "\n".join(all_lines) + "\n"
     sys.stdout.write(output)
     sys.stdout.flush()
 
-def get_smart_interactive_input():
-    """Membaca input dengan animasi tetap bergerak saat idle, dan berhenti otomatis saat user mulai ngetik"""
-    user_input = ""
-    tick = 0
-    last_frame = time.time()
-    last_keystroke_time = 0.0
-    is_typing = False
-    IDLE_RESUME_DELAY = 1.2 # Detik diam sebelum animasi otomatis jalan kembali
+def show_animated_menu():
+    """Memutar animasi sirkuit neon C-ROW & matrix berkilau secara halus tanpa flicker"""
+    # Siklus animasi bergerak dinamis ~1.2 detik (18 frame, 0.065 detik)
+    for tick in range(18):
+        render_main_screen(tick)
+        time.sleep(0.065)
 
-    clear_screen()
-    sys.stdout.write("\033[?25l")  # Sembunyikan kursor terminal bawaan
-    sys.stdout.flush()
+    # Kunci pada frame sirkuit terang yang solid & stabil
+    render_main_screen(18)
 
-    old_settings = None
-    if sys.platform != "win32":
-        try:
-            fd = sys.stdin.fileno()
-            old_settings = termios.tcgetattr(fd)
-            new_settings = termios.tcgetattr(fd)
-            # Matikan ECHO agar ketikan tidak dobel
-            new_settings[3] = new_settings[3] & ~termios.ECHO
-            new_settings[3] = new_settings[3] & ~termios.ICANON
-            new_settings[6][termios.VMIN] = 0
-            new_settings[6][termios.VTIME] = 0
-            termios.tcsetattr(fd, termios.TCSANOW, new_settings)
-        except Exception:
-            pass
-
+def get_clean_input():
+    """Membaca input stabil tanpa ada karakter aneh, 100% lancar untuk keyboard HP & Laptop"""
+    prompt = f"\n{MENU_BORDER}╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}\n{MENU_BORDER}╰─{YELLOW}➤{WHITE} Masukkan Pilihan [0-5]: {RESET}"
     try:
-        render_main_screen(tick, user_input)
-
-        while True:
-            # 1. Cek tombol keyboard secara non-blocking
-            has_key = False
-            ch = ""
-
-            if sys.platform == "win32":
-                if msvcrt.kbhit():
-                    ch = msvcrt.getwch()
-                    has_key = True
-            else:
-                r, _, _ = select.select([sys.stdin], [], [], 0.02)
-                if r:
-                    ch = sys.stdin.read(1)
-                    has_key = True
-
-            now = time.time()
-
-            if has_key:
-                # Tangani escape sequences (sentuhan layar, mouse, panah, dll.)
-                if ch == "\x1b":
-                    time.sleep(0.01)
-                    while select.select([sys.stdin], [], [], 0)[0]:
-                        sys.stdin.read(1)
-                    continue
-
-                if ch in ("\r", "\n"):
-                    sys.stdout.write("\033[?25h\n")
-                    sys.stdout.flush()
-                    return user_input.strip()
-                elif ch in ("\b", "\x08", "\x7f"):
-                    user_input = user_input[:-1]
-                    is_typing = True
-                    last_keystroke_time = now
-                    render_main_screen(tick, user_input)
-                elif ch == "\x03":
-                    raise KeyboardInterrupt
-                elif ch.isprintable() and len(user_input) < 10:
-                    user_input += ch
-                    is_typing = True
-                    last_keystroke_time = now
-                    render_main_screen(tick, user_input)
-
-            # 2. Cek status idle: Jika user berhenti mengetik selama 1.2 detik, animasi lanjut jalan!
-            if is_typing:
-                if now - last_keystroke_time >= IDLE_RESUME_DELAY:
-                    is_typing = False
-
-            # 3. Update animasi jika sedang TIDAK mengetik
-            if not is_typing:
-                if now - last_frame >= 0.06:
-                    tick += 1
-                    render_main_screen(tick, user_input)
-                    last_frame = now
-                else:
-                    time.sleep(0.01)
-            else:
-                time.sleep(0.02)
-
-    finally:
-        sys.stdout.write("\033[?25h")
-        sys.stdout.flush()
-        if sys.platform != "win32" and old_settings:
-            try:
-                termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
-            except Exception:
-                pass
+        return input(prompt).strip()
+    except EOFError:
+        return "0"
 
 # =====================================================================
 # TEMPAT LOGIKA TOOLS ANDA NANTI
@@ -489,8 +390,13 @@ def main():
 
     while True:
         try:
-            # Menu cerdas: Animasi terus gerak saat menunggu, pause saat mengetik, resume saat idle
-            choice = get_smart_interactive_input()
+            clear_screen()
+            
+            # 1. Animasi sirkuit neon C-ROW hidup & bergerak mulus (tanpa flicker / ilang-ilangan)
+            show_animated_menu()
+            
+            # 2. Input bersih & stabil (tidak ada karakter aneh, keyboard lancar 100%)
+            choice = get_clean_input()
             
             if choice in tools:
                 run_tool(choice, tools[choice])
