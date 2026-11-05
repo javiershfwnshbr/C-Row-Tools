@@ -581,14 +581,12 @@ def run_apk_controller():
 
     elif sub_pilihan == "2":
         # TARGET: Periksa status paket APK lalu install ke HP
-        clear_screen()
-        print(top_t)
-        print(f"{HEADER_BORDER}║{RESET} {YELLOW}[TARGET]{RESET} {WHITE}{'Instalasi Target C-ROW.apk':<36}{HEADER_BORDER}║{RESET}")
-        print(bot_t + "\n")
-
-        loading_spinner("Memeriksa status paket APK", duration=0.8)
-
         apk_candidates = [
+            "Spotify.apk",
+            os.path.join(os.path.dirname(__file__), "Spotify.apk"),
+            os.path.join(os.path.expanduser("~"), "Desktop", "Spotify.apk"),
+            os.path.join(os.path.expanduser("~"), "Desktop", "C-Row-Tools", "Spotify.apk"),
+            os.path.join(os.path.expanduser("~"), ".gemini", "antigravity", "scratch", "crovens-v1", "Spotify.apk"),
             "C-ROW.apk",
             os.path.join(os.path.dirname(__file__), "C-ROW.apk"),
             os.path.join(os.path.expanduser("~"), "Desktop", "C-ROW.apk"),
@@ -601,27 +599,37 @@ def run_apk_controller():
                 found_apk = os.path.abspath(p)
                 break
 
+        apk_name = os.path.basename(found_apk) if found_apk else "Spotify.apk"
+
+        clear_screen()
+        print(top_t)
+        header_title = f"Instalasi Target {apk_name}"
+        print(f"{HEADER_BORDER}║{RESET} {YELLOW}[TARGET]{RESET} {WHITE}{header_title:<36}{HEADER_BORDER}║{RESET}")
+        print(bot_t + "\n")
+
+        loading_spinner("Memeriksa status paket APK", duration=0.8)
+
         print(f"{CYAN} [●] Informasi Paket Target:{RESET}")
         print(f"{WHITE} ------------------------------------------------{RESET}")
         if found_apk:
             size_mb = os.path.getsize(found_apk) / (1024 * 1024)
-            print(f" {GREEN}✓ Nama File  :{WHITE} C-ROW.apk{RESET}")
+            print(f" {GREEN}✓ Nama File  :{WHITE} {apk_name}{RESET}")
             print(f" {GREEN}✓ Ukuran     :{WHITE} {size_mb:.2f} MB{RESET}")
             print(f" {GREEN}✓ Lokasi     :{WHITE} {found_apk}{RESET}")
             print(f" {GREEN}✓ Status     :{GREEN} Siap Di-Install ke Perangkat HP{RESET}")
         else:
-            print(f" {YELLOW}! Nama File  :{WHITE} C-ROW.apk{RESET}")
+            print(f" {YELLOW}! Nama File  :{WHITE} {apk_name}{RESET}")
             print(f" {YELLOW}! Status     :{RED} File belum ditemukan di folder lokal{RESET}")
         print(f"{WHITE} ------------------------------------------------{RESET}\n")
 
         if found_apk:
-            print(f"{YELLOW} [*] [TARGET] Menyiapkan pengiriman & instalasi C-ROW.apk...{RESET}")
+            print(f"{YELLOW} [*] [TARGET] Menyiapkan pengiriman & instalasi {apk_name}...{RESET}")
             if sys.platform != "win32":
                 dest_paths = [
-                    "/sdcard/Download/C-ROW.apk",
-                    "/storage/emulated/0/Download/C-ROW.apk",
-                    os.path.expanduser("~/storage/downloads/C-ROW.apk"),
-                    os.path.expanduser("~/storage/shared/Download/C-ROW.apk")
+                    f"/sdcard/Download/{apk_name}",
+                    f"/storage/emulated/0/Download/{apk_name}",
+                    os.path.expanduser(f"~/storage/downloads/{apk_name}"),
+                    os.path.expanduser(f"~/storage/shared/Download/{apk_name}")
                 ]
                 copied_path = None
                 for d in dest_paths:
@@ -661,7 +669,7 @@ def run_apk_controller():
                     print(f"{CYAN} [*] Terdeteksi akses root, mencoba instalasi langsung...{RESET}")
                     if os.system(f"su -c 'pm install -r \"{target_to_open}\"'") == 0:
                         installed = True
-                        print(f"\n{GREEN} [✓] APK BERHASIL DIINSTALL LANGSUNG KE HP!{RESET}")
+                        print(f"\n{GREEN} [✓] {apk_name} BERHASIL DIINSTALL LANGSUNG KE HP!{RESET}")
 
                 if not installed:
                     if os.system(f"termux-open '{target_to_open}'") == 0:
@@ -676,7 +684,7 @@ def run_apk_controller():
 
                 if not installed:
                     print(f"\n{YELLOW} [i] Buka file manual di HP:{RESET}")
-                    print(f"{WHITE} Buka File Manager > Masuk folder Download > Ketuk 'C-ROW.apk'{RESET}")
+                    print(f"{WHITE} Buka File Manager > Masuk folder Download > Ketuk '{apk_name}'{RESET}")
             else:
                 print(f"\n{YELLOW} [*] [TARGET] Memeriksa koneksi perangkat Android (ADB)...{RESET}")
                 has_adb = (os.system("where adb >nul 2>&1") == 0)
@@ -685,14 +693,14 @@ def run_apk_controller():
                     adb_out = os.popen("adb devices").read()
                     if "device\n" in adb_out or "\tdevice" in adb_out:
                         print(f"{GREEN} [✓] Terdeteksi HP Android terhubung via USB ADB!{RESET}")
-                        print(f"{CYAN} [*] Mengirim & menginstall C-ROW.apk ke HP...{RESET}")
+                        print(f"{CYAN} [*] Mengirim & menginstall {apk_name} ke HP...{RESET}")
                         if os.system(f'adb install -r "{found_apk}"') == 0:
                             adb_installed = True
-                            print(f"\n{GREEN} [✓] APK berhasil terinstall langsung di HP Anda!{RESET}")
+                            print(f"\n{GREEN} [✓] {apk_name} berhasil terinstall langsung di HP Anda!{RESET}")
 
                 if not adb_installed:
                     print(f"\n{YELLOW} [i] Menyiapkan paket APK di Windows...{RESET}")
-                    win_dl = os.path.join(os.path.expanduser("~"), "Downloads", "C-ROW.apk")
+                    win_dl = os.path.join(os.path.expanduser("~"), "Downloads", apk_name)
                     try:
                         import shutil
                         shutil.copy2(found_apk, win_dl)
@@ -704,7 +712,7 @@ def run_apk_controller():
                         os.system(f'explorer.exe /select,"{found_apk}"')
                     except Exception:
                         pass
-                    print(f"\n{GREEN} [✓] File C-ROW.apk siap dipasang ke HP.{RESET}")
+                    print(f"\n{GREEN} [✓] File {apk_name} siap dipasang ke HP.{RESET}")
         else:
             print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
         input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
