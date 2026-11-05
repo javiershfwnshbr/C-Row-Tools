@@ -234,10 +234,11 @@ def render_main_screen(tick=0, user_input=""):
     
     term_cols, term_lines = shutil.get_terminal_size((48, 24))
 
-    # 1. Tabel Menu Tools (Total Lebar 48 Kolom - Padat & Tanpa Garis Pembatas Acak)
+    # 1. Tabel Menu Tools (Total Lebar 48 Kolom - Pembatas Garis Tiap Tool Rapi & Enak Dibaca)
     right_col_w = SCREEN_WIDTH - 9  # 39
-    top_menu = f"{MENU_BORDER}┌──────┬" + ("─" * right_col_w) + f"┐{RESET}"
-    bot_menu = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
+    top_menu      = f"{MENU_BORDER}┌──────┬" + ("─" * right_col_w) + f"┐{RESET}"
+    connected_div = f"{MENU_BORDER}├──────┼" + ("─" * right_col_w) + f"┤{RESET}"
+    bot_menu      = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
 
     menu_rows_data = [
         (CYAN,    "[01]", "Tool Scraper & Sosmed"),
@@ -249,9 +250,11 @@ def render_main_screen(tick=0, user_input=""):
     ]
 
     menu_body = []
-    for tag_color, tag_id, name in menu_rows_data:
+    for idx, (tag_color, tag_id, name) in enumerate(menu_rows_data):
         row_text = f"{name:<36}"
         menu_body.append(f"{MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│ {tag_color}>{WHITE} {row_text}{MENU_BORDER}│{RESET}")
+        if idx < len(menu_rows_data) - 1:
+            menu_body.append(connected_div)
 
     pulse_palette = [MENU_BORDER, CYAN, WHITE, YELLOW]
     arrow_color = pulse_palette[(tick // 3) % len(pulse_palette)]
@@ -260,9 +263,9 @@ def render_main_screen(tick=0, user_input=""):
     prompt_line1 = f"{MENU_BORDER}╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}"
     prompt_line2 = f"{MENU_BORDER}╰─{arrow_color}➤{WHITE} Masukkan Pilihan [0-5]: {YELLOW}{user_input}{blink_cursor}\033[K"
 
-    # MODE COMPACT (Jika keyboard virtual Android Gboard sedang terbuka / layar < 23 baris)
-    # Total tinggi hanya 11 baris -> 100% Pas & Tidak Akan Pernah Scroll / Rusak!
-    if term_lines < 23:
+    # MODE COMPACT (Jika keyboard virtual Android Gboard sedang terbuka / layar < 28 baris)
+    # Total tinggi 16 baris -> Rapi & Tidak Akan Pernah Scroll / Rusak!
+    if term_lines < 28:
         compact_title = f"{HEADER_BORDER}╔══ {WHITE}C-ROW {HEADER_BORDER}[ {YELLOW}VIP👑 {HEADER_BORDER}] " + ("═" * 27) + f"╗{RESET}"
         all_lines = [
             compact_title,
