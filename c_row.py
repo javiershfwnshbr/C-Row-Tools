@@ -3,7 +3,7 @@
 """
 ==================================================
  Project Name : C-Row [ VIP ]
- Style        : Cyber Matrix Console (Fit Screen 49 Cols)
+ Style        : Cyber Matrix Console (Fit Screen 48 Cols)
  Platform     : Termux & Windows CMD / PowerShell
  Author       : Javier
 ==================================================
@@ -42,9 +42,9 @@ BOLD          = "\033[1m"
 # Pola angka biner untuk background
 BINARY_STREAM = "0110001101110010011011110111011101010110010010010101000000100000101011010010"
 
-# Ukuran Lebar Layar: 49 Kolom Presisi
-SCREEN_WIDTH = 49
-INNER_WIDTH  = 47
+# Ukuran Lebar Layar: 48 Kolom Presisi
+SCREEN_WIDTH = 48
+INNER_WIDTH  = 46
 
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
@@ -80,7 +80,7 @@ def pad_with_bin(text_to_show, offset):
     return b_left + text_to_show + b_right
 
 def skull_welcome_intro():
-    """Animasi opening Welcome My Friend dengan ASCII Tengkorak & latar biner hijau Matrix (Full 49 Kolom)"""
+    """Animasi opening Welcome My Friend dengan ASCII Tengkorak & latar biner hijau Matrix (Full 48 Kolom)"""
     clear_screen()
     sys.stdout.write("\033[?25l")  # Sembunyikan kursor terminal
     sys.stdout.flush()
@@ -93,13 +93,13 @@ def skull_welcome_intro():
     subtitle_target = "C-Row is here"
 
     skull_template = [
-        ("                  .-------.                    ", 18, 26),
-        ("                .-         -.                  ", 16, 28),
-        (r"               /   (O) (O)   \                 ", 15, 29),
-        ("              |       _       |                ", 14, 30),
-        (r"               \   \_____/   /                 ", 15, 29),
-        (r"                \   | | |   /                  ", 16, 28),
-        ("                 '--'---'--'                   ", 17, 27),
+        ("                  .-------.                   ", 18, 26),
+        ("                .-         -.                 ", 16, 28),
+        (r"               /   (O) (O)   \                ", 15, 29),
+        ("              |       _       |               ", 14, 30),
+        (r"               \   \_____/   /                ", 15, 29),
+        (r"                \   | | |   /                 ", 16, 28),
+        ("                 '--'---'--'                  ", 17, 27),
     ]
 
     def get_skull_bg_line(r_idx, tick, eye_color):
@@ -209,12 +209,12 @@ def get_shimmer_text(text, beam_pos, base_color, shine_color):
     return f"{base_color}" + "".join(res) + RESET
 
 def render_main_screen(tick=4):
-    """Merender menu C-ROW: Presisi 49 Kolom (Header 7 Baris, Menu Lengkap, Bebas Kedip)"""
+    """Merender menu C-ROW: Presisi 48 Kolom (Header 7 Baris, Menu Lengkap, Bebas Kedip)"""
     
-    # 1. Perhitungan Sirkuit Header Ungu (Lebar=47, Tinggi=9 -> Keliling=112)
+    # 1. Perhitungan Sirkuit Header Ungu (Lebar=46, Tinggi=9 -> Keliling=110)
     W_H = INNER_WIDTH
     H_H = 9
-    perim_h = 2 * (W_H + H_H)  # 112
+    perim_h = 2 * (W_H + H_H)  # 110
     
     step1_h = tick % perim_h
     step2_h = (tick + (perim_h // 2)) % perim_h
@@ -238,18 +238,18 @@ def render_main_screen(tick=4):
     mid_header = f"{HEADER_BORDER}╠" + ("═" * INNER_WIDTH) + f"╣{RESET}"
     bot_header = get_multi_beam_h_line("╚", "═", "╝", INNER_WIDTH, bot_beams_h, HEADER_BORDER, YELLOW)
 
-    # ASCII C-ROW BESAR: 7 baris panjang & 47 kolom lebar
+    # ASCII C-ROW BESAR: 7 baris panjang & 46 kolom lebar
     raw_art = [
-        "   ██████╗    ██████╗   ██████╗  ██╗    ██╗    ",
-        "  ██╔════╝    ██╔══██╗ ██╔═══██╗ ██║    ██║    ",
-        "  ██║         ██████╔╝ ██║   ██║ ██║ █╗ ██║    ",
-        "  ██║ █████╗  ██╔══██╗ ██║   ██║ ██║███╗██║    ",
-        "  ██║ ╚════╝  ██║  ██║ ██║   ██║ ██║███╗██║    ",
-        "  ╚██████╗    ██║  ██║ ╚██████╔╝ ╚███╔███╔╝    ",
-        "   ╚═════╝    ╚═╝  ╚═╝  ╚═════╝   ╚══╝╚══╝     "
+        "   ██████╗    ██████╗   ██████╗  ██╗    ██╗   ",
+        "  ██╔════╝    ██╔══██╗ ██╔═══██╗ ██║    ██║   ",
+        "  ██║         ██████╔╝ ██║   ██║ ██║ █╗ ██║   ",
+        "  ██║ █████╗  ██╔══██╗ ██║   ██║ ██║███╗██║   ",
+        "  ██║ ╚════╝  ██║  ██║ ██║   ██║ ██║███╗██║   ",
+        "  ╚██████╗    ██║  ██║ ╚██████╔╝ ╚███╔███╔╝   ",
+        "   ╚═════╝    ╚═╝  ╚═╝  ╚═════╝   ╚══╝╚══╝    "
     ]
 
-    beam_crow_x = (tick * 2) % 57
+    beam_crow_x = (tick * 2) % 56
     art_contents = []
     for r_idx, line in enumerate(raw_art):
         line_chars = []
@@ -275,19 +275,19 @@ def render_main_screen(tick=4):
 
     header_body.append(mid_header)
     
-    # Baris VIP + Mahkota 👑 (Total 47 karakter visual di dalam kotak)
+    # Baris VIP + Mahkota 👑 (Total 46 karakter visual di dalam kotak)
     info_idx = 8
     l_wall_info = f"{WHITE}║{RESET}" if info_idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
     r_wall_info = f"{WHITE}║{RESET}" if info_idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
     
-    left_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
-    right_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + 21 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
+    left_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(20))
+    right_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + 20 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
     
     vip_line = f"{l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
     header_body.append(vip_line)
 
-    # 2. Tabel Menu Tools (Total Lebar 49 Kolom)
-    right_col_w = SCREEN_WIDTH - 9  # 40
+    # 2. Tabel Menu Tools (Total Lebar 48 Kolom)
+    right_col_w = SCREEN_WIDTH - 9  # 39
     top_menu      = f"{MENU_BORDER}┌──────┬" + ("─" * right_col_w) + f"┐{RESET}"
     connected_div = f"{MENU_BORDER}├──────┼" + ("─" * right_col_w) + f"┤{RESET}"
     bot_menu      = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
@@ -303,7 +303,7 @@ def render_main_screen(tick=4):
 
     menu_body = []
     for idx, (tag_color, tag_id, name) in enumerate(menu_rows_data):
-        row_text = f"{name:<39}"
+        row_text = f"{name:<38}"
         menu_body.append(f"{MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│{WHITE} {row_text}{MENU_BORDER}│{RESET}")
         if idx < len(menu_rows_data) - 1:
             menu_body.append(connected_div)
@@ -353,7 +353,7 @@ def run_tool(nomor, nama_tool):
     top_t = f"{HEADER_BORDER}╔" + ("═" * INNER_WIDTH) + f"╗{RESET}"
     bot_t = f"{HEADER_BORDER}╚" + ("═" * INNER_WIDTH) + f"╝{RESET}"
     print(top_t)
-    print(f"{HEADER_BORDER}║{RESET} {WHITE}[MODUL]{RESET} {WHITE}{nama_tool:<37}{HEADER_BORDER}║{RESET}")
+    print(f"{HEADER_BORDER}║{RESET} {WHITE}[MODUL]{RESET} {WHITE}{nama_tool:<36}{HEADER_BORDER}║{RESET}")
     print(bot_t + "\n")
     
     # Animasi loading sebelum menjalankan tool
