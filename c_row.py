@@ -369,18 +369,19 @@ def render_main_screen(tick=0, user_input=""):
     sys.stdout.flush()
 
 def get_live_interactive_input():
-    """Animasi terus bergerak saat menunggu input, berhenti otomatis saat user ngetik, dan jalan lagi jika berhenti ngetik"""
+    """Animasi C-Row tenang (Zero Delay). Otomatis freeze total saat ngetik dan HANYA jalan lagi jika keluar keyboard / tekan Enter."""
     global RESIZED
     user_input = ""
     tick = 0
     last_frame = time.time()
     last_keystroke_time = 0.0
     is_typing = False
-    IDLE_RESUME_DELAY = 1.3 # Waktu jeda (detik) sebelum animasi resume otomatis jika user diam
+    IDLE_RESUME_DELAY = 8.0 # Waktu jeda panjang (8 detik) agar keyboard HP tidak terganggu sama sekali
+    FRAME_INTERVAL = 0.14   # Kecepatan frame seimbang (7 FPS): Bebas lag, super ringan, hemat baterai & CPU Termux
     VALID_CHARS = "0123456789exitquitxX" # Filter ketat: Menolak semua kode sentuhan/mouse aneh
 
-    # Aktifkan Alternate Screen Buffer (\033[?1049h) untuk isolasi penuh: Tidak akan mencemari scrollback terminal
-    sys.stdout.write("\033[?1049h\033[2J\033[H\033[?25l")
+    # Aktifkan Alternate Screen Buffer (\033[?1049h) dan tampilkan kursor (\033[?25h) agar Android Gboard langsung mengenali fokus input
+    sys.stdout.write("\033[?1049h\033[2J\033[H\033[?25h")
     sys.stdout.flush()
 
     old_settings = None
@@ -406,16 +407,17 @@ def get_live_interactive_input():
         while True:
             now = time.time()
 
-            # Deteksi resize layar (misal keyboard Android Gboard muncul / ditutup)
-            curr_term_lines = shutil.get_terminal_size((48, 24)).lines
-            if RESIZED or (curr_term_lines != last_term_lines):
+            # Deteksi resize layar secara efisien (hanya saat sinyal SIGWINCH aktif)
+            if RESIZED:
                 RESIZED = False
-                last_term_lines = curr_term_lines
-                is_typing = True
-                last_keystroke_time = now + 1.0 # Jeda 1 detik saat keyboard transisi agar animasi tidak bentrok
-                sys.stdout.write("\033[2J\033[H")
-                sys.stdout.flush()
-                render_main_screen(tick, user_input)
+                curr_term_lines = shutil.get_terminal_size((48, 24)).lines
+                if curr_term_lines != last_term_lines:
+                    last_term_lines = curr_term_lines
+                    is_typing = True
+                    last_keystroke_time = now
+                    sys.stdout.write("\033[2J\033[H")
+                    sys.stdout.flush()
+                    render_main_screen(tick, user_input)
 
             # 1. Cek tombol keyboard non-blocking
             has_key = False
@@ -430,7 +432,7 @@ def get_live_interactive_input():
                         continue
                     has_key = True
             else:
-                r, _, _ = select.select([sys.stdin], [], [], 0.02)
+                r, _, _ = select.select([sys.stdin], [], [], 0.03)
                 if r:
                     ch = sys.stdin.read(1)
                     has_key = True
@@ -445,43 +447,53 @@ def get_live_interactive_input():
                     else:
                         while msvcrt.kbhit():
                             msvcrt.getwch()
-                    # Sentuhan / fokus terdeteksi: Pause animasi instan agar tidak bentrok dengan keyboard!
+                    # Sentuhan / fokus terdeteksi: Freeze animasi seketika!
                     is_typing = True
                     last_keystroke_time = now
                     continue
 
                 if ch in ("\r", "\n"):
+                    # Abaikan Enter jika input masih kosong (jangan refresh layar)
+                    if not user_input.strip():
+                        continue
                     sys.stdout.write("\033[?25h\n")
                     sys.stdout.flush()
                     return user_input.strip()
+
                 elif ch in ("\b", "\x08", "\x7f"):
                     user_input = user_input[:-1]
                     is_typing = True
                     last_keystroke_time = now
                     render_main_screen(tick, user_input)
+
                 elif ch == "\x03":
                     raise KeyboardInterrupt
+
                 elif ch in VALID_CHARS and len(user_input) < 10:
                     user_input += ch
                     is_typing = True
                     last_keystroke_time = now
                     render_main_screen(tick, user_input)
 
-            # 2. Cek status idle: Jika user berhenti ngetik selama 1.3 detik, animasi jalan lagi!
+            # 2. Cek status idle:
+            # - Jika sudah ada teks yang diketik (len > 0), ANIMASI TETAP BERHENTI TOTAL (TIDAK AKAN JALAN SAMPAI ENTER DITEKAN)
+            # - Jika kosong, baru jalan lagi setelah 8 detik tidak menyentuh keyboard (keluar dari halaman keyboard)
             if is_typing:
-                if now - last_keystroke_time >= IDLE_RESUME_DELAY:
+                if len(user_input) > 0:
+                    is_typing = True
+                elif now - last_keystroke_time >= IDLE_RESUME_DELAY:
                     is_typing = False
 
             # 3. Update animasi jika sedang TIDAK mengetik
             if not is_typing:
-                if now - last_frame >= 0.06:
+                if now - last_frame >= FRAME_INTERVAL:
                     tick += 1
                     render_main_screen(tick, user_input)
                     last_frame = now
                 else:
-                    time.sleep(0.01)
+                    time.sleep(0.02)
             else:
-                time.sleep(0.02)
+                time.sleep(0.03)
 
     finally:
         # Kembalikan kursor dan tutup Alternate Screen Buffer
