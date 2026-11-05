@@ -274,22 +274,24 @@ def render_main_screen(tick=0, user_input=""):
         ]
     else:
         # MODE FULL (Ketika keyboard tertutup / layar normal >= 23 baris)
-        # ASCII C-ROW BESAR: 5 baris proporsional & tepat 46 kolom lebar (48 dengan border)
+        # ASCII C-ROW BESAR & 3D: 7 baris gagah, tinggi & panjang presisi 46 kolom lebar (48 dengan border)
         raw_art = [
-            "    ██████╗   ██████╗   ██████╗  ██╗    ██╗   ",
-            "   ██╔════╝   ██╔══██╗ ██╔═══██╗ ██║    ██║   ",
-            "   ██║        ██████╔╝ ██║   ██║ ██║ █╗ ██║   ",
-            "   ██║  ████╗ ██╔══██╗ ██║   ██║ ██║███╗██║   ",
-            "   ╚██████╔╝  ██║  ██║ ╚██████╔╝ ╚███╔███╔╝   "
+            "   ██████╗    ██████╗   ██████╗  ██╗    ██╗   ",
+            "  ██╔════╝    ██╔══██╗ ██╔═══██╗ ██║    ██║   ",
+            "  ██║         ██████╔╝ ██║   ██║ ██║ █╗ ██║   ",
+            "  ██║ █████╗  ██╔══██╗ ██║   ██║ ██║███╗██║   ",
+            "  ██║ ╚════╝  ██║  ██║ ██║   ██║ ██║███╗██║   ",
+            "  ╚██████╗    ██║  ██║ ╚██████╔╝ ╚███╔███╔╝   ",
+            "   ╚═════╝    ╚═╝  ╚═╝  ╚═════╝   ╚══╝╚══╝    "
         ]
 
-        # Perhitungan Sirkuit Header Ungu (Lebar=46, Tinggi=7 -> Keliling=106)
+        # Perhitungan Sirkuit Header Ungu (Lebar=46, Tinggi=9 -> Keliling=110)
         W_H = INNER_WIDTH
-        H_H = len(raw_art) + 2  # 7
-        perim_h = 2 * (W_H + H_H)  # 106
+        H_H = len(raw_art) + 2  # 9
+        perim_h = 2 * (W_H + H_H)  # 110
         
-        step1_h = tick % perim_h
-        step2_h = (tick + (perim_h // 2)) % perim_h
+        step1_h = (tick * 2) % perim_h
+        step2_h = (tick * 2 + (perim_h // 2)) % perim_h
         
         top_beams_h = []
         bot_beams_h = []
@@ -341,8 +343,8 @@ def render_main_screen(tick=0, user_input=""):
         l_wall_info = f"{WHITE}║{RESET}" if info_idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
         r_wall_info = f"{WHITE}║{RESET}" if info_idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
         
-        left_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(20))
-        right_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + 20 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
+        left_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(20))
+        right_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + 20 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
         
         vip_line = f"{l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
         header_body.append(vip_line)
@@ -375,8 +377,8 @@ def get_live_interactive_input():
     last_frame = time.time()
     last_keystroke_time = 0.0
     is_typing = False
-    IDLE_RESUME_DELAY = 2.0 # Jeda 2 detik setelah berhenti menekan tombol sebelum animasi jalan lagi
-    FRAME_INTERVAL = 0.12   # Kecepatan frame seimbang (8 FPS): Halus, responsif & bebas lag
+    IDLE_RESUME_DELAY = 1.8 # Jeda 1.8 detik setelah berhenti mengetik sebelum animasi lanjut jalan
+    FRAME_INTERVAL = 0.05   # Kecepatan frame super mulus (20 FPS): Cepat, hidup, tidak delay
     VALID_CHARS = "0123456789exitquitxX" # Filter ketat karakter valid
 
     clear_screen()
@@ -417,7 +419,7 @@ def get_live_interactive_input():
                     clear_screen()
                     render_main_screen(tick, user_input)
 
-            # 1. Cek tombol keyboard non-blocking
+            # 1. Cek tombol keyboard non-blocking (responsif instan < 10ms)
             has_key = False
             ch = ""
 
@@ -430,7 +432,7 @@ def get_live_interactive_input():
                         continue
                     has_key = True
             else:
-                r, _, _ = select.select([sys.stdin], [], [], 0.03)
+                r, _, _ = select.select([sys.stdin], [], [], 0.01)
                 if r:
                     ch = sys.stdin.read(1)
                     has_key = True
@@ -438,7 +440,7 @@ def get_live_interactive_input():
             if has_key:
                 # Tangani & buang escape sequences (sentuhan layar, mouse, panah, dll.)
                 if ch == "\x1b":
-                    time.sleep(0.01)
+                    time.sleep(0.005)
                     if sys.platform != "win32":
                         while select.select([sys.stdin], [], [], 0)[0]:
                             sys.stdin.read(1)
@@ -471,7 +473,7 @@ def get_live_interactive_input():
                     last_keystroke_time = now
                     render_main_screen(tick, user_input)
 
-            # 2. Cek status idle: Berhenti saat ngetik, jalan lagi saat berhenti ngetik (jeda 2 detik)
+            # 2. Cek status idle: Berhenti saat ngetik, jalan lagi otomatis saat berhenti ngetik
             if is_typing:
                 if now - last_keystroke_time >= IDLE_RESUME_DELAY:
                     is_typing = False
@@ -483,9 +485,9 @@ def get_live_interactive_input():
                     render_main_screen(tick, user_input)
                     last_frame = now
                 else:
-                    time.sleep(0.02)
+                    time.sleep(0.005)
             else:
-                time.sleep(0.03)
+                time.sleep(0.01)
 
     finally:
         sys.stdout.write("\033[?25h")
