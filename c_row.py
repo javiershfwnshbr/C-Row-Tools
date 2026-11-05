@@ -250,8 +250,8 @@ def render_main_screen(tick=0, user_input=""):
 
     menu_body = []
     for tag_color, tag_id, name in menu_rows_data:
-        row_text = f"{name:<38}"
-        menu_body.append(f"{MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│{WHITE} {row_text}{MENU_BORDER}│{RESET}")
+        row_text = f"{name:<36}"
+        menu_body.append(f"{MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│ {tag_color}>{WHITE} {row_text}{MENU_BORDER}│{RESET}")
 
     pulse_palette = [MENU_BORDER, CYAN, WHITE, YELLOW]
     arrow_color = pulse_palette[(tick // 3) % len(pulse_palette)]
@@ -382,7 +382,7 @@ def get_live_interactive_input():
     VALID_CHARS = "0123456789exitquitxX" # Filter ketat karakter valid
 
     clear_screen()
-    sys.stdout.write("\033[?25h") # Kursor aktif di titik input
+    sys.stdout.write("\033[?25l") # Sembunyikan kursor terminal bawaan agar tidak ada kotak putih berkedip
     sys.stdout.flush()
 
     old_settings = None
