@@ -505,7 +505,7 @@ def get_live_interactive_input():
 # TEMPAT LOGIKA TOOLS ANDA NANTI
 # =====================================================================
 def run_apk_controller():
-    """Modul C-Row APK Controller: Admin Panel & Cihuy Target Installer"""
+    """Modul C-Row APK Controller: Admin Panel & Target Installer"""
     clear_screen()
     top_t = f"{HEADER_BORDER}╔" + ("═" * INNER_WIDTH) + f"╗{RESET}"
     bot_t = f"{HEADER_BORDER}╚" + ("═" * INNER_WIDTH) + f"╝{RESET}"
@@ -515,7 +515,7 @@ def run_apk_controller():
 
     print(f"{CYAN} [PILIHAN TINDAKAN]{RESET}")
     print(f" {WHITE}[1]{GREEN} Admin{RESET}")
-    print(f" {WHITE}[2]{YELLOW} Cihuy{RESET}")
+    print(f" {WHITE}[2]{YELLOW} Target{RESET}")
     print(f" {WHITE}[0]{RED} Kembali ke Menu Utama{RESET}")
 
     sub_pilihan = input(f"\n{CYAN} Masukkan Pilihan [0-2]: {RESET}").strip()
@@ -580,10 +580,10 @@ def run_apk_controller():
             input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
 
     elif sub_pilihan == "2":
-        # CIHUY: Periksa status paket APK lalu install ke HP
+        # TARGET: Periksa status paket APK lalu install ke HP
         clear_screen()
         print(top_t)
-        print(f"{HEADER_BORDER}║{RESET} {YELLOW}[CIHUY]{RESET} {WHITE}{'Instalasi Target C-ROW.apk':<36}{HEADER_BORDER}║{RESET}")
+        print(f"{HEADER_BORDER}║{RESET} {YELLOW}[TARGET]{RESET} {WHITE}{'Instalasi Target C-ROW.apk':<36}{HEADER_BORDER}║{RESET}")
         print(bot_t + "\n")
 
         loading_spinner("Memeriksa status paket APK", duration=0.8)
@@ -615,7 +615,7 @@ def run_apk_controller():
         print(f"{WHITE} ------------------------------------------------{RESET}\n")
 
         if found_apk:
-            print(f"{YELLOW} [*] [CIHUY] Menyiapkan pengiriman & instalasi C-ROW.apk...{RESET}")
+            print(f"{YELLOW} [*] [TARGET] Menyiapkan pengiriman & instalasi C-ROW.apk...{RESET}")
             if sys.platform != "win32":
                 dest_paths = [
                     "/sdcard/Download/C-ROW.apk",
@@ -661,24 +661,24 @@ def run_apk_controller():
                     print(f"{CYAN} [*] Terdeteksi akses root, mencoba instalasi langsung...{RESET}")
                     if os.system(f"su -c 'pm install -r \"{target_to_open}\"'") == 0:
                         installed = True
-                        print(f"\n{GREEN} [✓] CIHUY! APK BERHASIL DIINSTALL LANGSUNG KE HP!{RESET}")
+                        print(f"\n{GREEN} [✓] APK BERHASIL DIINSTALL LANGSUNG KE HP!{RESET}")
 
                 if not installed:
                     if os.system(f"termux-open '{target_to_open}'") == 0:
                         installed = True
-                        print(f"\n{GREEN} [✓] CIHUY! Pop-up instalasi telah muncul di layar HP Anda!{RESET}")
+                        print(f"\n{GREEN} [✓] Pop-up instalasi telah muncul di layar HP Anda!{RESET}")
                         print(f"{WHITE} Silakan ketuk tombol 'Install' / 'Pasang' pada layar.{RESET}")
 
                 if not installed:
                     if os.system(f"am start -a android.intent.action.VIEW -d 'file://{target_to_open}' -t 'application/vnd.android.package-archive' 2>/dev/null") == 0:
                         installed = True
-                        print(f"\n{GREEN} [✓] CIHUY! Perintah instalasi dikirim ke Package Installer.{RESET}")
+                        print(f"\n{GREEN} [✓] Perintah instalasi dikirim ke Package Installer.{RESET}")
 
                 if not installed:
                     print(f"\n{YELLOW} [i] Buka file manual di HP:{RESET}")
                     print(f"{WHITE} Buka File Manager > Masuk folder Download > Ketuk 'C-ROW.apk'{RESET}")
             else:
-                print(f"\n{YELLOW} [*] [CIHUY] Memeriksa koneksi perangkat Android (ADB)...{RESET}")
+                print(f"\n{YELLOW} [*] [TARGET] Memeriksa koneksi perangkat Android (ADB)...{RESET}")
                 has_adb = (os.system("where adb >nul 2>&1") == 0)
                 adb_installed = False
                 if has_adb:
@@ -688,7 +688,7 @@ def run_apk_controller():
                         print(f"{CYAN} [*] Mengirim & menginstall C-ROW.apk ke HP...{RESET}")
                         if os.system(f'adb install -r "{found_apk}"') == 0:
                             adb_installed = True
-                            print(f"\n{GREEN} [✓] CIHUY! APK berhasil terinstall langsung di HP Anda!{RESET}")
+                            print(f"\n{GREEN} [✓] APK berhasil terinstall langsung di HP Anda!{RESET}")
 
                 if not adb_installed:
                     print(f"\n{YELLOW} [i] Menyiapkan paket APK di Windows...{RESET}")
@@ -704,7 +704,7 @@ def run_apk_controller():
                         os.system(f'explorer.exe /select,"{found_apk}"')
                     except Exception:
                         pass
-                    print(f"\n{GREEN} [✓] CIHUY! File C-ROW.apk siap dipasang ke HP.{RESET}")
+                    print(f"\n{GREEN} [✓] File C-ROW.apk siap dipasang ke HP.{RESET}")
         else:
             print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
         input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
