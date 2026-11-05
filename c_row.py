@@ -15,6 +15,21 @@ import time
 import random
 import re
 import unicodedata
+import shutil
+import signal
+
+# Flag deteksi perubahan ukuran terminal (misal saat Gboard dibuka / ditutup)
+RESIZED = False
+
+def handle_sigwinch(signum, frame):
+    global RESIZED
+    RESIZED = True
+
+if hasattr(signal, "SIGWINCH"):
+    try:
+        signal.signal(signal.SIGWINCH, handle_sigwinch)
+    except Exception:
+        pass
 
 # Impor library input keyboard sesuai OS
 if sys.platform == "win32":
@@ -53,7 +68,8 @@ SCREEN_WIDTH = 48
 INNER_WIDTH  = 46
 
 def clear_screen():
-    os.system("cls" if os.name == "nt" else "clear")
+    sys.stdout.write("\033[2J\033[H")
+    sys.stdout.flush()
 
 def loading_spinner(pesan, duration=1.0):
     """Animasi spinner berputar saat proses loading tool"""
@@ -215,82 +231,11 @@ def get_shimmer_text(text, beam_pos, base_color, shine_color):
     return f"{base_color}" + "".join(res) + RESET
 
 def render_main_screen(tick=0, user_input=""):
-    """Merender menu C-ROW: Presisi 48 Kolom, In-Place Overwrite (Tinggi 20 Baris = ZERO SCROLL, ZERO FLICKER)"""
+    """Merender menu C-ROW: Presisi 48 Kolom, Responsif Tinggi (Auto Compact saat Keyboard Terbuka)"""
     
-    # ASCII C-ROW BESAR: 5 baris proporsional & tepat 46 kolom lebar (48 dengan border)
-    raw_art = [
-        "    ██████╗   ██████╗   ██████╗  ██╗    ██╗   ",
-        "   ██╔════╝   ██╔══██╗ ██╔═══██╗ ██║    ██║   ",
-        "   ██║        ██████╔╝ ██║   ██║ ██║ █╗ ██║   ",
-        "   ██║  ████╗ ██╔══██╗ ██║   ██║ ██║███╗██║   ",
-        "   ╚██████╔╝  ██║  ██║ ╚██████╔╝ ╚███╔███╔╝   "
-    ]
+    term_cols, term_lines = shutil.get_terminal_size((48, 24))
 
-    # 1. Perhitungan Sirkuit Header Ungu (Lebar=46, Tinggi=7 -> Keliling=106)
-    W_H = INNER_WIDTH
-    H_H = len(raw_art) + 2  # 7
-    perim_h = 2 * (W_H + H_H)  # 106
-    
-    step1_h = tick % perim_h
-    step2_h = (tick + (perim_h // 2)) % perim_h
-    
-    top_beams_h = []
-    bot_beams_h = []
-    left_walls_h = set()
-    right_walls_h = set()
-
-    for s in [step1_h, step2_h]:
-        if s < W_H:
-            top_beams_h.append(s)
-        elif s < W_H + H_H:
-            right_walls_h.add(s - W_H)
-        elif s < 2 * W_H + H_H:
-            bot_beams_h.append((W_H - 1) - (s - W_H - H_H))
-        else:
-            left_walls_h.add((H_H - 1) - (s - 2 * W_H - H_H))
-
-    top_header = get_multi_beam_h_line("╔", "═", "╗", INNER_WIDTH, top_beams_h, HEADER_BORDER, YELLOW)
-    mid_header = f"{HEADER_BORDER}╠" + ("═" * INNER_WIDTH) + f"╣{RESET}"
-    bot_header = get_multi_beam_h_line("╚", "═", "╝", INNER_WIDTH, bot_beams_h, HEADER_BORDER, YELLOW)
-
-    beam_crow_x = (tick * 2) % 56
-    art_contents = []
-    for r_idx, line in enumerate(raw_art):
-        line_chars = []
-        for col_idx, char in enumerate(line[:INNER_WIDTH]):
-            if char == ' ':
-                b_digit = BINARY_STREAM[(r_idx * INNER_WIDTH + col_idx + (tick // 2)) % len(BINARY_STREAM)]
-                line_chars.append(f"{DIM_BINARY}{b_digit}{RESET}")
-            else:
-                dist = abs(col_idx - beam_crow_x)
-                if dist == 0:
-                    line_chars.append(f"{WHITE}{char}{RESET}")
-                elif dist <= 2:
-                    line_chars.append(f"{CYAN}{char}{RESET}")
-                else:
-                    line_chars.append(f"{WHITE}{char}{RESET}")
-        art_contents.append("".join(line_chars))
-
-    header_body = []
-    for idx, content in enumerate(art_contents):
-        l_wall = f"{WHITE}║{RESET}" if idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
-        r_wall = f"{WHITE}║{RESET}" if idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
-        header_body.append(f"{l_wall}{content}{r_wall}")
-
-    header_body.append(mid_header)
-    
-    # Baris VIP + Mahkota 👑 (Total 46 karakter visual di dalam kotak)
-    info_idx = len(raw_art) + 1
-    l_wall_info = f"{WHITE}║{RESET}" if info_idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
-    r_wall_info = f"{WHITE}║{RESET}" if info_idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
-    
-    left_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(20))
-    right_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + 20 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
-    
-    vip_line = f"{l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
-    header_body.append(vip_line)
-
-    # 2. Tabel Menu Tools (Total Lebar 48 Kolom - Padat & Tanpa Garis Pembatas Acak = ZERO ILANG-ILANGAN)
+    # 1. Tabel Menu Tools (Total Lebar 48 Kolom - Padat & Tanpa Garis Pembatas Acak)
     right_col_w = SCREEN_WIDTH - 9  # 39
     top_menu = f"{MENU_BORDER}┌──────┬" + ("─" * right_col_w) + f"┐{RESET}"
     bot_menu = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
@@ -309,10 +254,6 @@ def render_main_screen(tick=0, user_input=""):
         row_text = f"{name:<38}"
         menu_body.append(f"{MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│{WHITE} {row_text}{MENU_BORDER}│{RESET}")
 
-    # 3. Judul Menu & Prompt
-    beam_title = (tick * 2) % 30
-    title_animated = get_shimmer_text(" [ PILIH MENU TOOLS ]", beam_title, MENU_BORDER, WHITE)
-
     pulse_palette = [MENU_BORDER, CYAN, WHITE, YELLOW]
     arrow_color = pulse_palette[(tick // 3) % len(pulse_palette)]
     blink_cursor = f"{YELLOW}█{RESET}" if ((tick // 3) % 2 == 0) else " "
@@ -320,25 +261,116 @@ def render_main_screen(tick=0, user_input=""):
     prompt_line1 = f"{MENU_BORDER}╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}"
     prompt_line2 = f"{MENU_BORDER}╰─{arrow_color}➤{WHITE} Masukkan Pilihan [0-5]: {YELLOW}{user_input}{blink_cursor}\033[K"
 
-    all_lines = [
-        top_header,
-        *header_body,
-        bot_header,
-        title_animated,
-        top_menu,
-        *menu_body,
-        bot_menu,
-        prompt_line1,
-        prompt_line2
-    ]
+    # MODE COMPACT (Jika keyboard virtual Android Gboard sedang terbuka / layar < 23 baris)
+    # Total tinggi hanya 11 baris -> 100% Pas & Tidak Akan Pernah Scroll / Rusak!
+    if term_lines < 23:
+        compact_title = f"{HEADER_BORDER}╔══ {WHITE}C-ROW {HEADER_BORDER}[ {YELLOW}VIP👑 {HEADER_BORDER}] " + ("═" * 27) + f"╗{RESET}"
+        all_lines = [
+            compact_title,
+            top_menu,
+            *menu_body,
+            bot_menu,
+            prompt_line1,
+            prompt_line2
+        ]
+    else:
+        # MODE FULL (Ketika keyboard tertutup / layar normal >= 23 baris)
+        # ASCII C-ROW BESAR: 5 baris proporsional & tepat 46 kolom lebar (48 dengan border)
+        raw_art = [
+            "    ██████╗   ██████╗   ██████╗  ██╗    ██╗   ",
+            "   ██╔════╝   ██╔══██╗ ██╔═══██╗ ██║    ██║   ",
+            "   ██║        ██████╔╝ ██║   ██║ ██║ █╗ ██║   ",
+            "   ██║  ████╗ ██╔══██╗ ██║   ██║ ██║███╗██║   ",
+            "   ╚██████╔╝  ██║  ██║ ╚██████╔╝ ╚███╔███╔╝   "
+        ]
 
-    # In-place overwrite menggunakan \033[H: Tepat 20 baris tanpa trailing newline (ZERO OVERFLOW / ZERO SCROLL / ZERO FLICKER)
+        # Perhitungan Sirkuit Header Ungu (Lebar=46, Tinggi=7 -> Keliling=106)
+        W_H = INNER_WIDTH
+        H_H = len(raw_art) + 2  # 7
+        perim_h = 2 * (W_H + H_H)  # 106
+        
+        step1_h = tick % perim_h
+        step2_h = (tick + (perim_h // 2)) % perim_h
+        
+        top_beams_h = []
+        bot_beams_h = []
+        left_walls_h = set()
+        right_walls_h = set()
+
+        for s in [step1_h, step2_h]:
+            if s < W_H:
+                top_beams_h.append(s)
+            elif s < W_H + H_H:
+                right_walls_h.add(s - W_H)
+            elif s < 2 * W_H + H_H:
+                bot_beams_h.append((W_H - 1) - (s - W_H - H_H))
+            else:
+                left_walls_h.add((H_H - 1) - (s - 2 * W_H - H_H))
+
+        top_header = get_multi_beam_h_line("╔", "═", "╗", INNER_WIDTH, top_beams_h, HEADER_BORDER, YELLOW)
+        mid_header = f"{HEADER_BORDER}╠" + ("═" * INNER_WIDTH) + f"╣{RESET}"
+        bot_header = get_multi_beam_h_line("╚", "═", "╝", INNER_WIDTH, bot_beams_h, HEADER_BORDER, YELLOW)
+
+        beam_crow_x = (tick * 2) % 56
+        art_contents = []
+        for r_idx, line in enumerate(raw_art):
+            line_chars = []
+            for col_idx, char in enumerate(line[:INNER_WIDTH]):
+                if char == ' ':
+                    b_digit = BINARY_STREAM[(r_idx * INNER_WIDTH + col_idx + (tick // 2)) % len(BINARY_STREAM)]
+                    line_chars.append(f"{DIM_BINARY}{b_digit}{RESET}")
+                else:
+                    dist = abs(col_idx - beam_crow_x)
+                    if dist == 0:
+                        line_chars.append(f"{WHITE}{char}{RESET}")
+                    elif dist <= 2:
+                        line_chars.append(f"{CYAN}{char}{RESET}")
+                    else:
+                        line_chars.append(f"{WHITE}{char}{RESET}")
+            art_contents.append("".join(line_chars))
+
+        header_body = []
+        for idx, content in enumerate(art_contents):
+            l_wall = f"{WHITE}║{RESET}" if idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
+            r_wall = f"{WHITE}║{RESET}" if idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
+            header_body.append(f"{l_wall}{content}{r_wall}")
+
+        header_body.append(mid_header)
+        
+        # Baris VIP + Mahkota 👑
+        info_idx = len(raw_art) + 1
+        l_wall_info = f"{WHITE}║{RESET}" if info_idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
+        r_wall_info = f"{WHITE}║{RESET}" if info_idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
+        
+        left_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(20))
+        right_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + 20 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
+        
+        vip_line = f"{l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
+        header_body.append(vip_line)
+
+        beam_title = (tick * 2) % 30
+        title_animated = get_shimmer_text(" [ PILIH MENU TOOLS ]", beam_title, MENU_BORDER, WHITE)
+
+        all_lines = [
+            top_header,
+            *header_body,
+            bot_header,
+            title_animated,
+            top_menu,
+            *menu_body,
+            bot_menu,
+            prompt_line1,
+            prompt_line2
+        ]
+
+    # In-place overwrite menggunakan \033[H
     output = "\033[H" + "\n".join(all_lines)
     sys.stdout.write(output)
     sys.stdout.flush()
 
 def get_live_interactive_input():
     """Animasi terus bergerak saat menunggu input, berhenti otomatis saat user ngetik, dan jalan lagi jika berhenti ngetik"""
+    global RESIZED
     user_input = ""
     tick = 0
     last_frame = time.time()
@@ -347,8 +379,8 @@ def get_live_interactive_input():
     IDLE_RESUME_DELAY = 1.3 # Waktu jeda (detik) sebelum animasi resume otomatis jika user diam
     VALID_CHARS = "0123456789exitquitxX" # Filter ketat: Menolak semua kode sentuhan/mouse aneh
 
-    clear_screen()
-    sys.stdout.write("\033[?25l")  # Sembunyikan kursor terminal bawaan
+    # Aktifkan Alternate Screen Buffer (\033[?1049h) untuk isolasi penuh: Tidak akan mencemari scrollback terminal
+    sys.stdout.write("\033[?1049h\033[2J\033[H\033[?25l")
     sys.stdout.flush()
 
     old_settings = None
@@ -366,10 +398,25 @@ def get_live_interactive_input():
         except Exception:
             pass
 
+    last_term_lines = shutil.get_terminal_size((48, 24)).lines
+
     try:
         render_main_screen(tick, user_input)
 
         while True:
+            now = time.time()
+
+            # Deteksi resize layar (misal keyboard Android Gboard muncul / ditutup)
+            curr_term_lines = shutil.get_terminal_size((48, 24)).lines
+            if RESIZED or (curr_term_lines != last_term_lines):
+                RESIZED = False
+                last_term_lines = curr_term_lines
+                is_typing = True
+                last_keystroke_time = now + 1.0 # Jeda 1 detik saat keyboard transisi agar animasi tidak bentrok
+                sys.stdout.write("\033[2J\033[H")
+                sys.stdout.flush()
+                render_main_screen(tick, user_input)
+
             # 1. Cek tombol keyboard non-blocking
             has_key = False
             ch = ""
@@ -388,10 +435,8 @@ def get_live_interactive_input():
                     ch = sys.stdin.read(1)
                     has_key = True
 
-            now = time.time()
-
             if has_key:
-                # Tangani & buang escape sequences (sentuhan layar, mouse, panah, dll.)
+                # Tangani & buang escape sequences (sentuhan layar, mouse, fokus keyboard, dll.)
                 if ch == "\x1b":
                     time.sleep(0.01)
                     if sys.platform != "win32":
@@ -400,6 +445,9 @@ def get_live_interactive_input():
                     else:
                         while msvcrt.kbhit():
                             msvcrt.getwch()
+                    # Sentuhan / fokus terdeteksi: Pause animasi instan agar tidak bentrok dengan keyboard!
+                    is_typing = True
+                    last_keystroke_time = now
                     continue
 
                 if ch in ("\r", "\n"):
@@ -436,7 +484,8 @@ def get_live_interactive_input():
                 time.sleep(0.02)
 
     finally:
-        sys.stdout.write("\033[?25h")
+        # Kembalikan kursor dan tutup Alternate Screen Buffer
+        sys.stdout.write("\033[?25h\033[?1049l")
         sys.stdout.flush()
         if sys.platform != "win32" and old_settings:
             try:
