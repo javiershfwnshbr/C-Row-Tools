@@ -215,12 +215,21 @@ def get_shimmer_text(text, beam_pos, base_color, shine_color):
     return f"{base_color}" + "".join(res) + RESET
 
 def render_main_screen(tick=0, user_input=""):
-    """Merender menu C-ROW: Presisi 48 Kolom, In-Place Overwrite (Tanpa Clear Screen = ZERO FLICKER / TIDAK ILANG-ILANGAN)"""
+    """Merender menu C-ROW: Presisi 48 Kolom, In-Place Overwrite (Tinggi 20 Baris = ZERO SCROLL, ZERO FLICKER)"""
     
-    # 1. Perhitungan Sirkuit Header Ungu (Lebar=46, Tinggi=9 -> Keliling=110)
+    # ASCII C-ROW BESAR: 5 baris proporsional & tepat 46 kolom lebar (48 dengan border)
+    raw_art = [
+        "    ██████╗   ██████╗   ██████╗  ██╗    ██╗   ",
+        "   ██╔════╝   ██╔══██╗ ██╔═══██╗ ██║    ██║   ",
+        "   ██║        ██████╔╝ ██║   ██║ ██║ █╗ ██║   ",
+        "   ██║  ████╗ ██╔══██╗ ██║   ██║ ██║███╗██║   ",
+        "   ╚██████╔╝  ██║  ██║ ╚██████╔╝ ╚███╔███╔╝   "
+    ]
+
+    # 1. Perhitungan Sirkuit Header Ungu (Lebar=46, Tinggi=7 -> Keliling=106)
     W_H = INNER_WIDTH
-    H_H = 9
-    perim_h = 2 * (W_H + H_H)  # 110
+    H_H = len(raw_art) + 2  # 7
+    perim_h = 2 * (W_H + H_H)  # 106
     
     step1_h = tick % perim_h
     step2_h = (tick + (perim_h // 2)) % perim_h
@@ -243,17 +252,6 @@ def render_main_screen(tick=0, user_input=""):
     top_header = get_multi_beam_h_line("╔", "═", "╗", INNER_WIDTH, top_beams_h, HEADER_BORDER, YELLOW)
     mid_header = f"{HEADER_BORDER}╠" + ("═" * INNER_WIDTH) + f"╣{RESET}"
     bot_header = get_multi_beam_h_line("╚", "═", "╝", INNER_WIDTH, bot_beams_h, HEADER_BORDER, YELLOW)
-
-    # ASCII C-ROW BESAR: 7 baris panjang & 46 kolom lebar
-    raw_art = [
-        "   ██████╗    ██████╗   ██████╗  ██╗    ██╗   ",
-        "  ██╔════╝    ██╔══██╗ ██╔═══██╗ ██║    ██║   ",
-        "  ██║         ██████╔╝ ██║   ██║ ██║ █╗ ██║   ",
-        "  ██║ █████╗  ██╔══██╗ ██║   ██║ ██║███╗██║   ",
-        "  ██║ ╚════╝  ██║  ██║ ██║   ██║ ██║███╗██║   ",
-        "  ╚██████╗    ██║  ██║ ╚██████╔╝ ╚███╔███╔╝   ",
-        "   ╚═════╝    ╚═╝  ╚═╝  ╚═════╝   ╚══╝╚══╝    "
-    ]
 
     beam_crow_x = (tick * 2) % 56
     art_contents = []
@@ -282,21 +280,20 @@ def render_main_screen(tick=0, user_input=""):
     header_body.append(mid_header)
     
     # Baris VIP + Mahkota 👑 (Total 46 karakter visual di dalam kotak)
-    info_idx = 8
+    info_idx = len(raw_art) + 1
     l_wall_info = f"{WHITE}║{RESET}" if info_idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
     r_wall_info = f"{WHITE}║{RESET}" if info_idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
     
-    left_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(20))
-    right_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + 20 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
+    left_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(20))
+    right_bin = "".join(BINARY_STREAM[(6 * INNER_WIDTH + 20 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
     
     vip_line = f"{l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
     header_body.append(vip_line)
 
-    # 2. Tabel Menu Tools (Total Lebar 48 Kolom - Solid & Tidak Ilang-Ilangan)
+    # 2. Tabel Menu Tools (Total Lebar 48 Kolom - Padat & Tanpa Garis Pembatas Acak = ZERO ILANG-ILANGAN)
     right_col_w = SCREEN_WIDTH - 9  # 39
-    top_menu      = f"{MENU_BORDER}┌──────┬" + ("─" * right_col_w) + f"┐{RESET}"
-    connected_div = f"{MENU_BORDER}├──────┼" + ("─" * right_col_w) + f"┤{RESET}"
-    bot_menu      = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
+    top_menu = f"{MENU_BORDER}┌──────┬" + ("─" * right_col_w) + f"┐{RESET}"
+    bot_menu = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
 
     menu_rows_data = [
         (CYAN,    "[01]", "Tool Scraper & Sosmed"),
@@ -308,11 +305,9 @@ def render_main_screen(tick=0, user_input=""):
     ]
 
     menu_body = []
-    for idx, (tag_color, tag_id, name) in enumerate(menu_rows_data):
+    for tag_color, tag_id, name in menu_rows_data:
         row_text = f"{name:<38}"
         menu_body.append(f"{MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│{WHITE} {row_text}{MENU_BORDER}│{RESET}")
-        if idx < len(menu_rows_data) - 1:
-            menu_body.append(connected_div)
 
     # 3. Judul Menu & Prompt
     beam_title = (tick * 2) % 30
@@ -329,18 +324,16 @@ def render_main_screen(tick=0, user_input=""):
         top_header,
         *header_body,
         bot_header,
-        "",
         title_animated,
         top_menu,
         *menu_body,
         bot_menu,
-        "",
         prompt_line1,
         prompt_line2
     ]
 
-    # In-place overwrite menggunakan \033[H (TIDAK ADA PENGHAPUSAN LAYAR / BEBAS KEDIP / ZERO ILANG-ILANGAN)
-    output = "\033[H" + "\n".join(all_lines) + "\n"
+    # In-place overwrite menggunakan \033[H: Tepat 20 baris tanpa trailing newline (ZERO OVERFLOW / ZERO SCROLL / ZERO FLICKER)
+    output = "\033[H" + "\n".join(all_lines)
     sys.stdout.write(output)
     sys.stdout.flush()
 
@@ -384,6 +377,10 @@ def get_live_interactive_input():
             if sys.platform == "win32":
                 if msvcrt.kbhit():
                     ch = msvcrt.getwch()
+                    if ch in ('\x00', '\xe0'):
+                        if msvcrt.kbhit():
+                            msvcrt.getwch()
+                        continue
                     has_key = True
             else:
                 r, _, _ = select.select([sys.stdin], [], [], 0.02)
@@ -397,8 +394,12 @@ def get_live_interactive_input():
                 # Tangani & buang escape sequences (sentuhan layar, mouse, panah, dll.)
                 if ch == "\x1b":
                     time.sleep(0.01)
-                    while select.select([sys.stdin], [], [], 0)[0]:
-                        sys.stdin.read(1)
+                    if sys.platform != "win32":
+                        while select.select([sys.stdin], [], [], 0)[0]:
+                            sys.stdin.read(1)
+                    else:
+                        while msvcrt.kbhit():
+                            msvcrt.getwch()
                     continue
 
                 if ch in ("\r", "\n"):
