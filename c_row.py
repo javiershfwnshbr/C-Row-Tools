@@ -3,8 +3,8 @@
 """
 ==================================================
  Project Name : C-Row [ VIP ]
- Style        : Cyber Matrix Console (Fit Full Screen Termux & Laptop)
- Platform     : Termux & Windows CMD / PowerShell
+ Style        : Cyber Matrix Console (Fit Mobile Termux)
+ Platform     : Termux & Windows CMD
  Author       : Javier
 ==================================================
 """
@@ -16,6 +16,7 @@ import random
 import re
 import unicodedata
 
+# Impor library non-blocking keyboard input sesuai OS jika diperlukan
 if sys.platform == "win32":
     try:
         sys.stdout.reconfigure(encoding='utf-8')
@@ -42,10 +43,6 @@ BOLD          = "\033[1m"
 # Pola angka biner untuk background
 BINARY_STREAM = "0110001101110010011011110111011101010110010010010101000000100000101011010010"
 
-# Ukuran Lebar Layar Presisi (50 Kolom Penuh Layar HP Termux & Laptop)
-SCREEN_WIDTH = 50
-INNER_WIDTH  = 48
-
 def clear_screen():
     os.system("cls" if os.name == "nt" else "clear")
 
@@ -56,11 +53,11 @@ def loading_spinner(pesan, duration=1.0):
     idx = 0
     while time.time() < end_time:
         frame = frames[idx % len(frames)]
-        sys.stdout.write(f"\r {CYAN}[{frame}]{WHITE} {pesan}...{RESET}")
+        sys.stdout.write(f"\r  {CYAN}[{frame}]{WHITE} {pesan}...{RESET}")
         sys.stdout.flush()
         time.sleep(0.08)
         idx += 1
-    sys.stdout.write(f"\r {GREEN}[✓]{WHITE} {pesan} selesai!   {RESET}\n\n")
+    sys.stdout.write(f"\r  {GREEN}[✓]{WHITE} {pesan} selesai!   {RESET}\n\n")
 
 def vlen(s):
     """Menghitung lebar visual karakter (mendukung emoji & aksen ANSI)"""
@@ -72,7 +69,7 @@ def get_bin(offset, length):
 
 def pad_with_bin(text_to_show, offset):
     cur = vlen(text_to_show)
-    rem = INNER_WIDTH - cur
+    rem = 30 - cur
     l = max(0, rem // 2)
     r = max(0, rem - l)
     b_left = f"{DIM_GREEN}" + get_bin(offset, l) + f"{RESET}"
@@ -80,26 +77,26 @@ def pad_with_bin(text_to_show, offset):
     return b_left + text_to_show + b_right
 
 def skull_welcome_intro():
-    """Animasi opening Welcome My Friend dengan ASCII Tengkorak & latar biner hijau Matrix (Full 50 Kolom)"""
+    """Animasi opening Welcome My Friend dengan ASCII Tengkorak & latar biner hijau Matrix (Lebar 33 Kolom, Tidak Mentok Kanan)"""
     clear_screen()
     sys.stdout.write("\033[?25l")  # Sembunyikan kursor terminal
     sys.stdout.flush()
 
-    top_b = f"{HEADER_BORDER}╔" + ("═" * INNER_WIDTH) + f"╗{RESET}"
-    bot_b = f"{HEADER_BORDER}╚" + ("═" * INNER_WIDTH) + f"╝{RESET}"
-    mid_b = f"{HEADER_BORDER}╠" + ("═" * INNER_WIDTH) + f"╣{RESET}"
+    top_b = f"{HEADER_BORDER} ╔" + ("═" * 30) + f"╗{RESET}"
+    bot_b = f"{HEADER_BORDER} ╚" + ("═" * 30) + f"╝{RESET}"
+    mid_b = f"{HEADER_BORDER} ╠" + ("═" * 30) + f"╣{RESET}"
 
-    welcome_target = "W E L C O M E   M Y   F R I E N D"
+    welcome_target = "WELCOME MY FRIEND"
     subtitle_target = "C-Row is here"
 
     skull_template = [
-        ("                   .-------.                    ", 19, 27),
-        ("                 .-         -.                  ", 17, 29),
-        (r"                /   (O) (O)   \                 ", 16, 30),
-        ("               |       _       |                ", 15, 31),
-        (r"                \   \_____/   /                 ", 16, 30),
-        (r"                 \   | | |   /                  ", 17, 29),
-        ("                  '--'---'--'                   ", 18, 28),
+        ("          .-------.           ", 10, 18),
+        ("        .-         -.         ", 8, 20),
+        (r"       /   (O) (O)   \        ", 7, 21),
+        ("      |       _       |       ", 6, 22),
+        (r"       \   \_____/   /        ", 7, 21),
+        (r"        \   | | |   /         ", 8, 20),
+        ("         '--'---'--'          ", 9, 19),
     ]
 
     def get_skull_bg_line(r_idx, tick, eye_color):
@@ -107,7 +104,7 @@ def skull_welcome_intro():
         res = []
         for c_idx, ch in enumerate(raw):
             if c_idx < l_bound or c_idx > r_bound:
-                b = BINARY_STREAM[(r_idx * INNER_WIDTH + c_idx + tick) % len(BINARY_STREAM)]
+                b = BINARY_STREAM[(r_idx * 30 + c_idx + tick) % len(BINARY_STREAM)]
                 res.append(f"{DIM_GREEN}{b}{RESET}")
             else:
                 if ch == 'O':
@@ -119,7 +116,7 @@ def skull_welcome_intro():
         return "".join(res)
 
     try:
-        # Fase 1: Efek typewriter tulisan "W E L C O M E   M Y   F R I E N D"
+        # Fase 1: Efek typewriter tulisan "WELCOME MY FRIEND"
         for i in range(len(welcome_target) + 1):
             partial1 = welcome_target[:i]
             cursor1 = "█" if i < len(welcome_target) else ""
@@ -130,12 +127,12 @@ def skull_welcome_intro():
 
             content = [
                 top_b,
-                f"{HEADER_BORDER}║{DIM_GREEN}" + get_bin(i, INNER_WIDTH) + f"{RESET}{HEADER_BORDER}║{RESET}",
-                *[f"{HEADER_BORDER}║{l}{HEADER_BORDER}║{RESET}" for l in s_lines],
-                f"{HEADER_BORDER}║{DIM_GREEN}" + get_bin(i + 50, INNER_WIDTH) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i, 30) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                *[f"{HEADER_BORDER} ║{l}{HEADER_BORDER}║{RESET}" for l in s_lines],
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i + 50, 30) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 mid_b,
-                f"{HEADER_BORDER}║" + pad_with_bin(txt1, i) + f"{HEADER_BORDER}║{RESET}",
-                f"{HEADER_BORDER}║{DIM_GREEN}" + get_bin(i + 80, INNER_WIDTH) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║" + pad_with_bin(txt1, i) + f"{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(i + 80, 30) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 bot_b
             ]
 
@@ -154,12 +151,12 @@ def skull_welcome_intro():
 
             content = [
                 top_b,
-                f"{HEADER_BORDER}║{DIM_GREEN}" + get_bin(j + 40, INNER_WIDTH) + f"{RESET}{HEADER_BORDER}║{RESET}",
-                *[f"{HEADER_BORDER}║{l}{HEADER_BORDER}║{RESET}" for l in s_lines],
-                f"{HEADER_BORDER}║{DIM_GREEN}" + get_bin(j + 90, INNER_WIDTH) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(j + 40, 30) + f"{RESET}{HEADER_BORDER}║{RESET}",
+                *[f"{HEADER_BORDER} ║{l}{HEADER_BORDER}║{RESET}" for l in s_lines],
+                f"{HEADER_BORDER} ║{DIM_GREEN}" + get_bin(j + 90, 30) + f"{RESET}{HEADER_BORDER}║{RESET}",
                 mid_b,
-                f"{HEADER_BORDER}║" + pad_with_bin(f"{CYAN}{BOLD}{welcome_target}{RESET}", j + 40) + f"{HEADER_BORDER}║{RESET}",
-                f"{HEADER_BORDER}║" + pad_with_bin(txt2, j + 120) + f"{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║" + pad_with_bin(f"{CYAN}{BOLD}{welcome_target}{RESET}", j + 40) + f"{HEADER_BORDER}║{RESET}",
+                f"{HEADER_BORDER} ║" + pad_with_bin(txt2, j + 120) + f"{HEADER_BORDER}║{RESET}",
                 bot_b
             ]
 
@@ -209,12 +206,12 @@ def get_shimmer_text(text, beam_pos, base_color, shine_color):
     return f"{base_color}" + "".join(res) + RESET
 
 def render_main_screen(tick=0):
-    """Merender menu C-ROW: Header Besar (Lebar 50 Kol, Panjang 7 Baris), Tools di Pinggir, Bebas Kedipan"""
+    """Merender menu C-ROW ringkas 33 kolom (tidak mentok kanan & rapi di Termux)"""
     
-    # 1. Perhitungan Sirkuit Header Ungu (Lebar=48, Tinggi=9 -> Keliling=114)
-    W_H = INNER_WIDTH
-    H_H = 9
-    perim_h = 2 * (W_H + H_H)  # 114
+    # 1. Sirkuit Header Ungu (Lebar=30, Tinggi=8 -> Keliling=76)
+    W_H = 30
+    H_H = 8
+    perim_h = 2 * (W_H + H_H)  # 76
     
     step1_h = tick % perim_h
     step2_h = (tick + (perim_h // 2)) % perim_h
@@ -234,28 +231,26 @@ def render_main_screen(tick=0):
         else:
             left_walls_h.add((H_H - 1) - (s - 2 * W_H - H_H))
 
-    top_header = get_multi_beam_h_line("╔", "═", "╗", INNER_WIDTH, top_beams_h, HEADER_BORDER, YELLOW)
-    mid_header = f"{HEADER_BORDER}╠" + ("═" * INNER_WIDTH) + f"╣{RESET}"
-    bot_header = get_multi_beam_h_line("╚", "═", "╝", INNER_WIDTH, bot_beams_h, HEADER_BORDER, YELLOW)
+    top_header = get_multi_beam_h_line(" ╔", "═", "╗", 30, top_beams_h, HEADER_BORDER, YELLOW)
+    mid_header = f"{HEADER_BORDER} ╠" + ("═" * 30) + f"╣{RESET}"
+    bot_header = get_multi_beam_h_line(" ╚", "═", "╝", 30, bot_beams_h, HEADER_BORDER, YELLOW)
 
-    # ASCII C-ROW BESAR: 7 baris panjang & 48 kolom lebar (Mantap & Full Kanan)
     raw_art = [
-        "    ██████╗    ██████╗   ██████╗  ██╗    ██╗    ",
-        "   ██╔════╝    ██╔══██╗ ██╔═══██╗ ██║    ██║    ",
-        "   ██║         ██████╔╝ ██║   ██║ ██║ █╗ ██║    ",
-        "   ██║ █████╗  ██╔══██╗ ██║   ██║ ██║███╗██║    ",
-        "   ██║ ╚════╝  ██║  ██║ ██║   ██║ ██║███╗██║    ",
-        "   ╚██████╗    ██║  ██║ ╚██████╔╝ ╚███╔███╔╝    ",
-        "    ╚═════╝    ╚═╝  ╚═╝  ╚═════╝   ╚══╝╚══╝     "
+        " ████╗ ████╗  ████╗ ██╗   ██╗ ",
+        "██╔══╝ ██╔═██╗██╔═██╗██║   ██║ ",
+        "██║    ████╔╝ ██║ ██║██║ █╗██║ ",
+        "██║    ██╔═██╗██║ ██║██║███║█║ ",
+        "╚████╗ ██║ ██║╚████╔╝╚███╔███╝ ",
+        " ╚═══╝ ╚═╝ ╚═╝ ╚═══╝  ╚══╝╚══╝ "
     ]
 
-    beam_crow_x = (tick * 2) % 58
+    beam_crow_x = (tick * 2) % 36
     art_contents = []
     for r_idx, line in enumerate(raw_art):
         line_chars = []
-        for col_idx, char in enumerate(line[:INNER_WIDTH]):
+        for col_idx, char in enumerate(line[:30]):
             if char == ' ':
-                b_digit = BINARY_STREAM[(r_idx * INNER_WIDTH + col_idx + (tick // 2)) % len(BINARY_STREAM)]
+                b_digit = BINARY_STREAM[(r_idx * 30 + col_idx + (tick // 2)) % len(BINARY_STREAM)]
                 line_chars.append(f"{DIM_BINARY}{b_digit}{RESET}")
             else:
                 dist = abs(col_idx - beam_crow_x)
@@ -271,46 +266,44 @@ def render_main_screen(tick=0):
     for idx, content in enumerate(art_contents):
         l_wall = f"{WHITE}║{RESET}" if idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
         r_wall = f"{WHITE}║{RESET}" if idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
-        header_body.append(f"{l_wall}{content}{r_wall}")
+        header_body.append(f" {l_wall}{content}{r_wall}")
 
     header_body.append(mid_header)
     
-    # Baris VIP + Mahkota 👑 (Total 48 karakter visual di dalam kotak)
-    info_idx = 8
+    # Baris VIP + Mahkota 👑 (Total 30 karakter visual di dalam kotak)
+    info_idx = 7
     l_wall_info = f"{WHITE}║{RESET}" if info_idx in left_walls_h else f"{HEADER_BORDER}║{RESET}"
     r_wall_info = f"{WHITE}║{RESET}" if info_idx in right_walls_h else f"{HEADER_BORDER}║{RESET}"
     
-    left_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(21))
-    right_bin = "".join(BINARY_STREAM[(8 * INNER_WIDTH + 21 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(22))
+    left_bin = "".join(BINARY_STREAM[(7 * 30 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(12))
+    right_bin = "".join(BINARY_STREAM[(7 * 30 + 12 + 5 + i + (tick // 2)) % len(BINARY_STREAM)] for i in range(13))
     
-    vip_line = f"{l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
+    vip_line = f" {l_wall_info}{DIM_BINARY}{left_bin}{RESET}{YELLOW}VIP👑{RESET}{DIM_BINARY}{right_bin}{RESET}{r_wall_info}"
     header_body.append(vip_line)
 
-    # 2. Tabel Menu Tools: Di Pinggir & Full Lebar (50 Kolom)
-    right_col_w = SCREEN_WIDTH - 9  # 41
-    top_menu      = f"{MENU_BORDER}┌──────┬" + ("─" * right_col_w) + f"┐{RESET}"
-    connected_div = f"{MENU_BORDER}├──────┼" + ("─" * right_col_w) + f"┤{RESET}"
-    bot_menu      = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
+    # 2. Tabel Menu Tools (Lebar 33 Kolom, Tidak Mentok Kanan)
+    top_menu      = f"{MENU_BORDER} ┌──────┬───────────────────────┐{RESET}"
+    connected_div = f"{MENU_BORDER} ├──────┼───────────────────────┤{RESET}"
+    bot_menu      = f"{MENU_BORDER} └──────┴───────────────────────┘{RESET}"
 
     menu_rows_data = [
-        (CYAN,    "[01]", "Tool Scraper & Sosmed"),
-        (GREEN,   "[02]", "Tool Analisis & Keamanan"),
-        (YELLOW,  "[03]", "Tool Otomatisasi & Bot"),
-        (MAGENTA, "[04]", "File Manager & Downloader"),
-        (BLUE,    "[05]", "Pengaturan & Update Tool"),
-        (RED,     "[00]", "Keluar Sistem")
+        (CYAN,    "[01]", "Scraper & Sosmed      "),
+        (GREEN,   "[02]", "Analisis & Keamanan   "),
+        (YELLOW,  "[03]", "Otomatisasi & Bot     "),
+        (MAGENTA, "[04]", "File & Downloader     "),
+        (BLUE,    "[05]", "Pengaturan & Update   "),
+        (RED,     "[00]", "Keluar Sistem         ")
     ]
 
     menu_body = []
     for idx, (tag_color, tag_id, name) in enumerate(menu_rows_data):
-        row_text = f"{name:<40}"
-        menu_body.append(f"{MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│{WHITE} {row_text}{MENU_BORDER}│{RESET}")
+        menu_body.append(f" {MENU_BORDER}│{RESET}{tag_color} {tag_id} {MENU_BORDER}│{WHITE} {name}{MENU_BORDER}│{RESET}")
         if idx < len(menu_rows_data) - 1:
             menu_body.append(connected_div)
 
     # 3. Judul Menu
-    beam_title = (tick * 2) % 30
-    title_animated = get_shimmer_text(" [ PILIH MENU TOOLS ]", beam_title, MENU_BORDER, WHITE)
+    beam_title = (tick * 2) % 25
+    title_animated = get_shimmer_text("     [ PILIH MENU TOOLS ]", beam_title, MENU_BORDER, WHITE)
 
     all_lines = [
         top_header,
@@ -323,24 +316,14 @@ def render_main_screen(tick=0):
         bot_menu
     ]
 
-    # Double buffer tanpa erase screen untuk menghilangkan kedipan (ilang-ilangan)
-    output = "\033[H" + "\n".join(all_lines) + "\n"
+    clear_screen()
+    output = "\n".join(all_lines) + "\n"
     sys.stdout.write(output)
     sys.stdout.flush()
 
-def show_animated_menu():
-    """Memutar animasi sirkuit neon C-ROW & matrix berkilau secara halus tanpa flicker"""
-    # Siklus animasi bergerak dinamis ~1.2 detik (18 frame, 0.065 detik)
-    for tick in range(18):
-        render_main_screen(tick)
-        time.sleep(0.065)
-
-    # Kunci pada frame sirkuit terang yang solid & stabil
-    render_main_screen(18)
-
-def get_clean_input():
-    """Membaca input stabil tanpa ada karakter aneh, 100% lancar untuk keyboard HP & Laptop"""
-    prompt = f"\n{MENU_BORDER}╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}\n{MENU_BORDER}╰─{YELLOW}➤{WHITE} Masukkan Pilihan [0-5]: {RESET}"
+def get_stable_input():
+    """Membaca input secara stabil tanpa bentrok dengan keyboard virtual Android"""
+    prompt = f"\n{MENU_BORDER} ╭── {GREEN}(root㉿termux){MENU_BORDER}─[{WHITE}~/c-row{MENU_BORDER}]{RESET}\n{MENU_BORDER} ╰─{YELLOW}➤{WHITE} Masukkan Pilihan [0-5]: {RESET}"
     try:
         return input(prompt).strip()
     except EOFError:
@@ -351,22 +334,22 @@ def get_clean_input():
 # =====================================================================
 def run_tool(nomor, nama_tool):
     clear_screen()
-    top_t = f"{HEADER_BORDER}╔" + ("═" * INNER_WIDTH) + f"╗{RESET}"
-    bot_t = f"{HEADER_BORDER}╚" + ("═" * INNER_WIDTH) + f"╝{RESET}"
+    top_t = f"{HEADER_BORDER} ╔" + ("═" * 30) + f"╗{RESET}"
+    bot_t = f"{HEADER_BORDER} ╚" + ("═" * 30) + f"╝{RESET}"
     print(top_t)
-    print(f"{HEADER_BORDER}║{RESET} {WHITE}[MODUL]{RESET} {WHITE}{nama_tool:<38}{HEADER_BORDER}║{RESET}")
+    print(f" {HEADER_BORDER}║{RESET} {WHITE}[MODUL]{RESET} {WHITE}{nama_tool[:20]:<20}{HEADER_BORDER}║{RESET}")
     print(bot_t + "\n")
     
     # Animasi loading sebelum menjalankan tool
     loading_spinner(f"Menyiapkan {nama_tool}", duration=1.0)
     
-    print(f"{GREEN} [●] {nama_tool} sedang berjalan...{RESET}")
-    print(f"{WHITE} ------------------------------------------------{RESET}")
+    print(f"{GREEN}  [●] {nama_tool} sedang berjalan...{RESET}")
+    print(f"{WHITE}  ------------------------------{RESET}")
     # --- LOGIKA TOOL ANDA MASUK DI SINI ---
-    print(f" {WHITE}(Modul aktif dan siap menerima perintah logika){RESET}")
-    print(f"{WHITE} ------------------------------------------------{RESET}")
+    print(f"  {WHITE}(Modul aktif dan siap digunakan){RESET}")
+    print(f"{WHITE}  ------------------------------{RESET}")
     
-    input(f"\n{MENU_BORDER} Tekan Enter untuk kembali ke menu...{RESET}")
+    input(f"\n{MENU_BORDER}  Tekan Enter untuk kembali ke menu...{RESET}")
 
 # =====================================================================
 # MAIN LOOP
@@ -376,27 +359,25 @@ def main():
     skull_welcome_intro()
 
     tools = {
-        "1": "Tool Scraper & Sosmed",
-        "01": "Tool Scraper & Sosmed",
-        "2": "Tool Analisis & Keamanan",
-        "02": "Tool Analisis & Keamanan",
-        "3": "Tool Otomatisasi & Bot",
-        "03": "Tool Otomatisasi & Bot",
-        "4": "File Manager & Downloader",
-        "04": "File Manager & Downloader",
-        "5": "Pengaturan & Update Tool",
-        "05": "Pengaturan & Update Tool",
+        "1": "Scraper & Sosmed",
+        "01": "Scraper & Sosmed",
+        "2": "Analisis & Keamanan",
+        "02": "Analisis & Keamanan",
+        "3": "Otomatisasi & Bot",
+        "03": "Otomatisasi & Bot",
+        "4": "File & Downloader",
+        "04": "File & Downloader",
+        "5": "Pengaturan & Update",
+        "05": "Pengaturan & Update",
     }
 
     while True:
         try:
-            clear_screen()
+            # Render menu utama
+            render_main_screen(tick=4)
             
-            # 1. Animasi sirkuit neon C-ROW hidup & bergerak mulus (tanpa flicker / ilang-ilangan)
-            show_animated_menu()
-            
-            # 2. Input bersih & stabil (tidak ada karakter aneh, keyboard lancar 100%)
-            choice = get_clean_input()
+            # Input yang 100% stabil, tidak menduplikasi layar, tidak double ketik
+            choice = get_stable_input()
             
             if choice in tools:
                 run_tool(choice, tools[choice])
