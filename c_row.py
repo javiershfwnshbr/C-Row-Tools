@@ -580,7 +580,7 @@ def run_apk_controller():
             input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
 
     elif sub_pilihan == "2":
-        # TARGET: Periksa status paket APK lalu install ke HP
+        # TARGET: Periksa status paket APK lalu tampilkan pilihan tindakan
         apk_candidates = [
             "Spotify.apk",
             os.path.join(os.path.dirname(__file__), "Spotify.apk"),
@@ -603,7 +603,7 @@ def run_apk_controller():
 
         clear_screen()
         print(top_t)
-        header_title = f"Instalasi Target {apk_name}"
+        header_title = f"Paket Target {apk_name}"
         print(f"{HEADER_BORDER}║{RESET} {YELLOW}[TARGET]{RESET} {WHITE}{header_title:<36}{HEADER_BORDER}║{RESET}")
         print(bot_t + "\n")
 
@@ -616,14 +616,27 @@ def run_apk_controller():
             print(f" {GREEN}✓ Nama File  :{WHITE} {apk_name}{RESET}")
             print(f" {GREEN}✓ Ukuran     :{WHITE} {size_mb:.2f} MB{RESET}")
             print(f" {GREEN}✓ Lokasi     :{WHITE} {found_apk}{RESET}")
-            print(f" {GREEN}✓ Status     :{GREEN} Siap Di-Install ke Perangkat HP{RESET}")
+            print(f" {GREEN}✓ Status     :{GREEN} Siap Digunakan{RESET}")
         else:
             print(f" {YELLOW}! Nama File  :{WHITE} {apk_name}{RESET}")
             print(f" {YELLOW}! Status     :{RED} File belum ditemukan di folder lokal{RESET}")
         print(f"{WHITE} ------------------------------------------------{RESET}\n")
 
-        if found_apk:
-            print(f"{YELLOW} [*] [TARGET] Menyiapkan pengiriman & instalasi {apk_name}...{RESET}")
+        if not found_apk:
+            print(f"{RED} [!] File APK tidak ditemukan di penyimpanan.{RESET}")
+            input(f"\n{MENU_BORDER} Tekan Enter untuk kembali...{RESET}")
+            return
+
+        print(f"{CYAN} [PILIHAN TINDAKAN TARGET]{RESET}")
+        print(f" {WHITE}[1]{GREEN} Pasang / Install APK ke HP (Buka Package Installer){RESET}")
+        print(f" {WHITE}[2]{CYAN} Salin APK ke Folder Download (/sdcard/Download/){RESET}")
+        print(f" {WHITE}[3]{BLUE} Bagikan via WiFi / Server Unduh Lokal (Port 8080){RESET}")
+        print(f" {WHITE}[0]{RED} Kembali ke Menu Sebelumnya{RESET}")
+
+        target_act = input(f"\n{CYAN} Masukkan Pilihan [0-3]: {RESET}").strip()
+
+        if target_act == "1":
+            print(f"\n{YELLOW} [*] [TARGET] Menyiapkan pengiriman & instalasi {apk_name}...{RESET}")
             if sys.platform != "win32":
                 dest_paths = [
                     f"/sdcard/Download/{apk_name}",
@@ -713,9 +726,96 @@ def run_apk_controller():
                     except Exception:
                         pass
                     print(f"\n{GREEN} [✓] File {apk_name} siap dipasang ke HP.{RESET}")
-        else:
-            print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
-        input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
+            input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
+
+        elif target_act == "2":
+            print(f"\n{YELLOW} [*] Menyalin file {apk_name} ke folder Download...{RESET}")
+            if sys.platform != "win32":
+                dest_paths = [
+                    f"/sdcard/Download/{apk_name}",
+                    f"/storage/emulated/0/Download/{apk_name}",
+                    os.path.expanduser(f"~/storage/downloads/{apk_name}")
+                ]
+                success = False
+                for d in dest_paths:
+                    try:
+                        import shutil
+                        d_dir = os.path.dirname(d)
+                        if os.path.exists(d_dir):
+                            shutil.copy2(found_apk, d)
+                            print(f"{GREEN} [✓] Berhasil disalin ke: {d}{RESET}")
+                            success = True
+                            break
+                    except Exception:
+                        pass
+                if not success:
+                    print(f"{YELLOW} [*] Menyiapkan izin penyimpanan (termux-setup-storage)...{RESET}")
+                    os.system("termux-setup-storage")
+                    time.sleep(1.0)
+                    for d in dest_paths:
+                        try:
+                            import shutil
+                            d_dir = os.path.dirname(d)
+                            if os.path.exists(d_dir):
+                                shutil.copy2(found_apk, d)
+                                print(f"{GREEN} [✓] Berhasil disalin ke: {d}{RESET}")
+                                success = True
+                                break
+                        except Exception:
+                            pass
+            else:
+                win_dl = os.path.join(os.path.expanduser("~"), "Downloads", apk_name)
+                try:
+                    import shutil
+                    shutil.copy2(found_apk, win_dl)
+                    print(f"{GREEN} [✓] Berhasil disalin ke folder Downloads Windows:{RESET}")
+                    print(f"{WHITE} {win_dl}{RESET}")
+                except Exception as e:
+                    print(f"{RED} [!] Gagal menyalin: {e}{RESET}")
+            input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
+
+        elif target_act == "3":
+            import socket
+            def get_local_ip():
+                try:
+                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    s.connect(("8.8.8.8", 80))
+                    ip = s.getsockname()[0]
+                    s.close()
+                    return ip
+                except Exception:
+                    return "127.0.0.1"
+
+            local_ip = get_local_ip()
+            port = 8080
+            apk_dir = os.path.dirname(os.path.abspath(found_apk))
+
+            print(f"\n{YELLOW} [*] Menjalankan server unduh lokal di port {port}...{RESET}")
+            print(f"{WHITE} ------------------------------------------------{RESET}")
+            print(f" {GREEN}✓ LINK UNDUH LANGSUNG:{RESET}")
+            print(f" {CYAN}👉 http://{local_ip}:{port}/{apk_name}{RESET}")
+            print(f"{WHITE} ------------------------------------------------{RESET}")
+            print(f"{WHITE} Buka tautan di atas pada browser HP yang terhubung ke WiFi sama.{RESET}")
+            print(f"{YELLOW} (Tekan Ctrl+C untuk menghentikan server dan kembali){RESET}\n")
+
+            try:
+                import http.server
+                import socketserver
+                class Handler(http.server.SimpleHTTPRequestHandler):
+                    def __init__(self, *args, **kwargs):
+                        super().__init__(*args, directory=apk_dir, **kwargs)
+                socketserver.TCPServer.allow_reuse_address = True
+                with socketserver.TCPServer(("", port), Handler) as httpd:
+                    httpd.serve_forever()
+            except KeyboardInterrupt:
+                print(f"\n{YELLOW} [*] Server unduh dihentikan.{RESET}")
+                time.sleep(1.0)
+            except Exception as e:
+                print(f"\n{RED} [!] Error server HTTP: {e}{RESET}")
+                input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
+
+        elif target_act == "0":
+            return
 
     elif sub_pilihan == "0":
         return
