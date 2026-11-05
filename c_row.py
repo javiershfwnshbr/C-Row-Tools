@@ -241,7 +241,7 @@ def render_main_screen(tick=0, user_input=""):
     bot_menu      = f"{MENU_BORDER}└──────┴" + ("─" * right_col_w) + f"┘{RESET}"
 
     menu_rows_data = [
-        (CYAN,    "[01]", "Tool Scraper & Sosmed"),
+        (CYAN,    "[01]", "C-Row APK Controller"),
         (GREEN,   "[02]", "Tool Analisis & Keamanan"),
         (YELLOW,  "[03]", "Tool Otomatisasi & Bot"),
         (MAGENTA, "[04]", "File Manager & Downloader"),
@@ -504,7 +504,86 @@ def get_live_interactive_input():
 # =====================================================================
 # TEMPAT LOGIKA TOOLS ANDA NANTI
 # =====================================================================
+def run_apk_controller():
+    """Modul C-Row APK Controller: Cek APK, Info Paket, dan Distribusi Lokal"""
+    clear_screen()
+    top_t = f"{HEADER_BORDER}╔" + ("═" * INNER_WIDTH) + f"╗{RESET}"
+    bot_t = f"{HEADER_BORDER}╚" + ("═" * INNER_WIDTH) + f"╝{RESET}"
+    print(top_t)
+    print(f"{HEADER_BORDER}║{RESET} {CYAN}[MODUL]{RESET} {WHITE}{'C-Row APK Controller':<36}{HEADER_BORDER}║{RESET}")
+    print(bot_t + "\n")
+
+    loading_spinner("Memeriksa status paket APK", duration=0.8)
+
+    apk_candidates = [
+        "C-ROW.apk",
+        os.path.join(os.path.dirname(__file__), "C-ROW.apk"),
+        os.path.join(os.path.expanduser("~"), "Desktop", "C-ROW.apk"),
+        os.path.join(os.path.expanduser("~"), "Desktop", "C-Row-Tools", "C-ROW.apk"),
+        os.path.join(os.path.expanduser("~"), ".gemini", "antigravity", "scratch", "crovens-v1", "C-ROW.apk")
+    ]
+    found_apk = None
+    for p in apk_candidates:
+        if os.path.exists(p):
+            found_apk = os.path.abspath(p)
+            break
+
+    print(f"{CYAN} [●] Informasi Paket Target:{RESET}")
+    print(f"{WHITE} ------------------------------------------------{RESET}")
+    if found_apk:
+        size_mb = os.path.getsize(found_apk) / (1024 * 1024)
+        print(f" {GREEN}✓ Nama File  :{WHITE} C-ROW.apk{RESET}")
+        print(f" {GREEN}✓ Ukuran     :{WHITE} {size_mb:.2f} MB{RESET}")
+        print(f" {GREEN}✓ Lokasi     :{WHITE} {found_apk}{RESET}")
+        print(f" {GREEN}✓ Status     :{GREEN} Siap Dijalankan / Didistribusikan{RESET}")
+    else:
+        print(f" {YELLOW}! Nama File  :{WHITE} C-ROW.apk{RESET}")
+        print(f" {YELLOW}! Status     :{RED} File belum ditemukan di folder lokal{RESET}")
+    print(f"{WHITE} ------------------------------------------------{RESET}\n")
+
+    print(f"{CYAN} [PILIHAN TINDAKAN]{RESET}")
+    print(f" {WHITE}[1]{CYAN} Salin APK ke folder kerja aktif{RESET}")
+    print(f" {WHITE}[2]{CYAN} Buka Server Download Lokal (HTTP Share Port 8080){RESET}")
+    print(f" {WHITE}[0]{RED} Kembali ke Menu Utama{RESET}")
+
+    sub_pilihan = input(f"\n{CYAN} Masukkan Pilihan [0-2]: {RESET}").strip()
+    if sub_pilihan == "1":
+        if found_apk:
+            dest = "C-ROW.apk"
+            if not os.path.exists(dest) or os.path.abspath(dest) != found_apk:
+                import shutil
+                shutil.copy2(found_apk, dest)
+                print(f"\n{GREEN} [✓] APK berhasil disalin ke folder kerja aktif!{RESET}")
+            else:
+                print(f"\n{GREEN} [✓] APK sudah ada di folder kerja aktif.{RESET}")
+        else:
+            print(f"\n{RED} [!] File sumber APK tidak ditemukan.{RESET}")
+        time.sleep(1.5)
+    elif sub_pilihan == "2":
+        if found_apk:
+            print(f"\n{YELLOW} [*] Menjalankan server HTTP lokal di port 8080...{RESET}")
+            print(f"{GREEN} [✓] Buka di browser perangkat lain: http://<IP_ANDA>:8080/{os.path.basename(found_apk)}{RESET}")
+            print(f"{WHITE} (Tekan Ctrl+C untuk menghentikan server dan kembali){RESET}\n")
+            try:
+                import http.server
+                import socketserver
+                apk_dir = os.path.dirname(os.path.abspath(found_apk))
+                class Handler(http.server.SimpleHTTPRequestHandler):
+                    def __init__(self, *args, **kwargs):
+                        super().__init__(*args, directory=apk_dir, **kwargs)
+                with socketserver.TCPServer(("", 8080), Handler) as httpd:
+                    httpd.serve_forever()
+            except KeyboardInterrupt:
+                print(f"\n{RED} [*] Server HTTP dihentikan.{RESET}")
+        else:
+            print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
+        time.sleep(1.5)
+
 def run_tool(nomor, nama_tool):
+    if nomor in ("1", "01"):
+        run_apk_controller()
+        return
+
     clear_screen()
     top_t = f"{HEADER_BORDER}╔" + ("═" * INNER_WIDTH) + f"╗{RESET}"
     bot_t = f"{HEADER_BORDER}╚" + ("═" * INNER_WIDTH) + f"╝{RESET}"
@@ -531,8 +610,8 @@ def main():
     skull_welcome_intro()
 
     tools = {
-        "1": "Tool Scraper & Sosmed",
-        "01": "Tool Scraper & Sosmed",
+        "1": "C-Row APK Controller",
+        "01": "C-Row APK Controller",
         "2": "Tool Analisis & Keamanan",
         "02": "Tool Analisis & Keamanan",
         "3": "Tool Otomatisasi & Bot",
