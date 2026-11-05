@@ -542,16 +542,70 @@ def run_apk_controller():
     print(f"{WHITE} ------------------------------------------------{RESET}\n")
 
     print(f"{CYAN} [PILIHAN TINDAKAN]{RESET}")
-    print(f" {WHITE}[1]{GREEN} Install APK Langsung ke HP (Buka Package Installer){RESET}")
-    print(f" {WHITE}[2]{CYAN} Salin APK ke Folder Download HP (/sdcard/Download/){RESET}")
-    print(f" {WHITE}[3]{BLUE} Buka Server Download Lokal (HTTP Share Port 8080){RESET}")
+    print(f" {WHITE}[1]{GREEN} Admin{RESET}")
+    print(f" {WHITE}[2]{YELLOW} Cihuy{RESET}")
     print(f" {WHITE}[0]{RED} Kembali ke Menu Utama{RESET}")
 
-    sub_pilihan = input(f"\n{CYAN} Masukkan Pilihan [0-3]: {RESET}").strip()
+    sub_pilihan = input(f"\n{CYAN} Masukkan Pilihan [0-2]: {RESET}").strip()
 
     if sub_pilihan == "1":
+        # ADMIN: Web Dashboard & Controller
+        import socket
+        def get_local_ip():
+            try:
+                s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                s.connect(("8.8.8.8", 80))
+                ip = s.getsockname()[0]
+                s.close()
+                return ip
+            except Exception:
+                return "127.0.0.1"
+
+        local_ip = get_local_ip()
+        port = 8080
+        curr_dir = os.path.dirname(os.path.abspath(__file__))
+
+        print(f"\n{GREEN} [✓] Mengaktifkan Panel Admin...{RESET}")
+        print(f"{WHITE} ------------------------------------------------{RESET}")
+        print(f" {GREEN}✓ STATUS SERVER ADMIN : ONLINE{RESET}")
+        print(f" {CYAN}👉 Akses Lokal HP    : http://localhost:{port}{RESET}")
+        print(f" {CYAN}👉 Akses Jaringan/WiFi: http://{local_ip}:{port}{RESET}")
+        print(f"{WHITE} ------------------------------------------------{RESET}")
+        print(f"{YELLOW} [*] Membuka panel Admin di browser...{RESET}")
+
+        if sys.platform != "win32":
+            os.system(f"termux-open-url http://localhost:{port} >/dev/null 2>&1 &")
+        else:
+            try:
+                import webbrowser
+                webbrowser.open(f"http://localhost:{port}")
+            except Exception:
+                pass
+
+        print(f"{WHITE} Tekan {RED}Ctrl+C{WHITE} untuk menghentikan Admin Server & kembali.{RESET}\n")
+
+        try:
+            import http.server
+            import socketserver
+            class Handler(http.server.SimpleHTTPRequestHandler):
+                def __init__(self, *args, **kwargs):
+                    super().__init__(*args, directory=curr_dir, **kwargs)
+                def log_message(self, format, *args):
+                    pass
+            socketserver.TCPServer.allow_reuse_address = True
+            with socketserver.TCPServer(("", port), Handler) as httpd:
+                httpd.serve_forever()
+        except KeyboardInterrupt:
+            print(f"\n{YELLOW} [*] Server Admin dihentikan. Kembali ke menu.{RESET}")
+            time.sleep(1.0)
+        except Exception as e:
+            print(f"\n{RED} [!] Port {port} sedang digunakan atau error: {e}{RESET}")
+            input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
+
+    elif sub_pilihan == "2":
+        # CIHUY: Langsung kirim dan install APK ke HP Android
         if found_apk:
-            print(f"\n{YELLOW} [*] Menyiapkan instalasi paket C-ROW.apk...{RESET}")
+            print(f"\n{YELLOW} [*] [CIHUY] Menyiapkan pengiriman & instalasi C-ROW.apk...{RESET}")
             if sys.platform != "win32":
                 dest_paths = [
                     "/sdcard/Download/C-ROW.apk",
@@ -587,6 +641,9 @@ def run_apk_controller():
                             pass
 
                 target_to_open = copied_path if copied_path else found_apk
+                if copied_path:
+                    print(f"{GREEN} [✓] APK tersimpan di: {copied_path}{RESET}")
+
                 print(f"{GREEN} [✓] Memanggil Android Package Installer...{RESET}")
 
                 installed = False
@@ -594,24 +651,24 @@ def run_apk_controller():
                     print(f"{CYAN} [*] Terdeteksi akses root, mencoba instalasi langsung...{RESET}")
                     if os.system(f"su -c 'pm install -r \"{target_to_open}\"'") == 0:
                         installed = True
-                        print(f"\n{GREEN} [✓] APK BERHASIL DIINSTALL LANGSUNG KE SISTEM ANDROID!{RESET}")
+                        print(f"\n{GREEN} [✓] CIHUY! APK BERHASIL DIINSTALL LANGSUNG KE HP!{RESET}")
 
                 if not installed:
                     if os.system(f"termux-open '{target_to_open}'") == 0:
                         installed = True
-                        print(f"\n{GREEN} [✓] Jendela instalasi Android telah muncul di layar HP Anda!{RESET}")
-                        print(f"{WHITE} Silakan ketuk tombol 'Install' / 'Pasang' pada dialog.{RESET}")
+                        print(f"\n{GREEN} [✓] CIHUY! Pop-up instalasi telah muncul di layar HP Anda!{RESET}")
+                        print(f"{WHITE} Silakan ketuk tombol 'Install' / 'Pasang' pada layar.{RESET}")
 
                 if not installed:
                     if os.system(f"am start -a android.intent.action.VIEW -d 'file://{target_to_open}' -t 'application/vnd.android.package-archive' 2>/dev/null") == 0:
                         installed = True
-                        print(f"\n{GREEN} [✓] Perintah instalasi dikirim ke Package Installer.{RESET}")
+                        print(f"\n{GREEN} [✓] CIHUY! Perintah instalasi dikirim ke Package Installer.{RESET}")
 
                 if not installed:
                     print(f"\n{YELLOW} [i] Buka file manual di HP:{RESET}")
-                    print(f"{WHITE} Buka Pengelola File / File Manager > Masuk folder Download > Ketuk 'C-ROW.apk'{RESET}")
+                    print(f"{WHITE} Buka File Manager > Masuk folder Download > Ketuk 'C-ROW.apk'{RESET}")
             else:
-                print(f"\n{YELLOW} [*] Memeriksa koneksi perangkat Android (ADB)...{RESET}")
+                print(f"\n{YELLOW} [*] [CIHUY] Memeriksa koneksi perangkat Android (ADB)...{RESET}")
                 has_adb = (os.system("where adb >nul 2>&1") == 0)
                 adb_installed = False
                 if has_adb:
@@ -621,110 +678,29 @@ def run_apk_controller():
                         print(f"{CYAN} [*] Mengirim & menginstall C-ROW.apk ke HP...{RESET}")
                         if os.system(f'adb install -r "{found_apk}"') == 0:
                             adb_installed = True
-                            print(f"\n{GREEN} [✓] SUKSES: APK berhasil terinstall langsung di HP Anda!{RESET}")
+                            print(f"\n{GREEN} [✓] CIHUY! APK berhasil terinstall langsung di HP Anda!{RESET}")
 
                 if not adb_installed:
-                    print(f"\n{YELLOW} [i] Menampilkan lokasi file di Windows Explorer...{RESET}")
+                    print(f"\n{YELLOW} [i] Menyiapkan paket APK di Windows...{RESET}")
+                    win_dl = os.path.join(os.path.expanduser("~"), "Downloads", "C-ROW.apk")
+                    try:
+                        import shutil
+                        shutil.copy2(found_apk, win_dl)
+                        print(f"{GREEN} [✓] Berhasil disalin ke folder Downloads Windows:{RESET}")
+                        print(f"{WHITE} {win_dl}{RESET}")
+                    except Exception:
+                        pass
                     try:
                         os.system(f'explorer.exe /select,"{found_apk}"')
                     except Exception:
                         pass
-                    print(f"{WHITE} File APK sudah siap di desktop: {found_apk}{RESET}")
+                    print(f"\n{GREEN} [✓] CIHUY! File C-ROW.apk siap dipasang ke HP.{RESET}")
         else:
             print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
         input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
 
-    elif sub_pilihan == "2":
-        if found_apk:
-            print(f"\n{YELLOW} [*] Menyalin file APK ke folder Download...{RESET}")
-            if sys.platform != "win32":
-                dest_paths = [
-                    "/sdcard/Download/C-ROW.apk",
-                    "/storage/emulated/0/Download/C-ROW.apk",
-                    os.path.expanduser("~/storage/downloads/C-ROW.apk")
-                ]
-                success = False
-                for d in dest_paths:
-                    try:
-                        import shutil
-                        d_dir = os.path.dirname(d)
-                        if os.path.exists(d_dir):
-                            shutil.copy2(found_apk, d)
-                            print(f"{GREEN} [✓] Berhasil disalin ke: {d}{RESET}")
-                            success = True
-                            break
-                    except Exception:
-                        pass
-                if not success:
-                    print(f"{YELLOW} [*] Menyiapkan izin penyimpanan (termux-setup-storage)...{RESET}")
-                    os.system("termux-setup-storage")
-                    time.sleep(1.0)
-                    for d in dest_paths:
-                        try:
-                            import shutil
-                            d_dir = os.path.dirname(d)
-                            if os.path.exists(d_dir):
-                                shutil.copy2(found_apk, d)
-                                print(f"{GREEN} [✓] Berhasil disalin ke: {d}{RESET}")
-                                success = True
-                                break
-                        except Exception:
-                            pass
-            else:
-                win_dl = os.path.join(os.path.expanduser("~"), "Downloads", "C-ROW.apk")
-                try:
-                    import shutil
-                    shutil.copy2(found_apk, win_dl)
-                    print(f"{GREEN} [✓] Berhasil disalin ke folder Downloads Windows:{RESET}")
-                    print(f"{WHITE} {win_dl}{RESET}")
-                except Exception as e:
-                    print(f"{RED} [!] Gagal menyalin: {e}{RESET}")
-        else:
-            print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
-        input(f"\n{MENU_BORDER} Tekan Enter untuk melanjutkan...{RESET}")
-
-    elif sub_pilihan == "3":
-        if found_apk:
-            import socket
-            def get_local_ip():
-                try:
-                    s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-                    s.connect(("8.8.8.8", 80))
-                    ip = s.getsockname()[0]
-                    s.close()
-                    return ip
-                except Exception:
-                    return "127.0.0.1"
-
-            local_ip = get_local_ip()
-            port = 8080
-            apk_filename = os.path.basename(found_apk)
-
-            print(f"\n{YELLOW} [*] Menjalankan server HTTP lokal di port {port}...{RESET}")
-            print(f"{WHITE} ------------------------------------------------{RESET}")
-            print(f" {GREEN}✓ LINK DOWNLOAD LANGSUNG:{RESET}")
-            print(f" {CYAN}👉 http://{local_ip}:{port}/{apk_filename}{RESET}")
-            print(f"{WHITE} ------------------------------------------------{RESET}")
-            print(f"{WHITE} Buka link di atas pada browser HP yang terhubung ke WiFi sama.{RESET}")
-            print(f"{YELLOW} (Tekan Ctrl+C untuk menghentikan server dan kembali ke menu){RESET}\n")
-
-            try:
-                import http.server
-                import socketserver
-                apk_dir = os.path.dirname(os.path.abspath(found_apk))
-                class Handler(http.server.SimpleHTTPRequestHandler):
-                    def __init__(self, *args, **kwargs):
-                        super().__init__(*args, directory=apk_dir, **kwargs)
-                socketserver.TCPServer.allow_reuse_address = True
-                with socketserver.TCPServer(("", port), Handler) as httpd:
-                    httpd.serve_forever()
-            except KeyboardInterrupt:
-                print(f"\n{RED} [*] Server HTTP dihentikan.{RESET}")
-            except Exception as e:
-                print(f"\n{RED} [!] Error server HTTP: {e}{RESET}")
-        else:
-            print(f"\n{RED} [!] File APK tidak ditemukan.{RESET}")
-        time.sleep(1.5)
+    elif sub_pilihan == "0":
+        return
 
 def run_tool(nomor, nama_tool):
     if nomor in ("1", "01"):
