@@ -114,15 +114,15 @@ def skull_welcome_intro():
     subtitle_target = "C-Row is here"
 
     skull_template = [
-        (r"               .----------------.             ", 15, 32),
-        (r"             .'  _            _  '.           ", 13, 34),
-        (r"            /   / \          / \   \          ", 12, 35),
-        (r"           |   \ (O)        (O) /   |         ", 11, 36),
-        (r"           |    \___/  /\  \___/    |         ", 11, 36),
-        (r"            \         /  \         /          ", 12, 35),
-        (r"             \     .-======-.     /           ", 13, 34),
-        (r"              \    |/||/||/||    /            ", 14, 33),
-        (r"               '---'-''-''-''---'             ", 15, 32),
+        (r"                  .--------.                  ", 18, 27),
+        (r"                .'          '.                ", 16, 29),
+        (r"               /   __    __   \               ", 15, 30),
+        (r"              |   (O)    (O)   |              ", 14, 31),
+        (r"              |       /\       |              ", 14, 31),
+        (r"               \     '--'     /               ", 15, 30),
+        (r"                '.   _  _   .'                ", 16, 29),
+        (r"                  | |||||| |                  ", 18, 27),
+        (r"                  '--------'                  ", 18, 27),
     ]
 
     def get_skull_bg_line(r_idx, tick, eye_color):
@@ -133,10 +133,8 @@ def skull_welcome_intro():
                 b = BINARY_STREAM[(r_idx * INNER_WIDTH + c_idx + tick) % len(BINARY_STREAM)]
                 res.append(f"{DIM_GREEN}{b}{RESET}")
             else:
-                if ch in ('O', 'o', '0', 'X'):
+                if ch == 'O':
                     res.append(f"{eye_color}{BOLD}{ch}{RESET}")
-                elif ch == '=':
-                    res.append(f"{RED}{ch}{RESET}")
                 elif ch == ' ':
                     res.append(' ')
                 else:
